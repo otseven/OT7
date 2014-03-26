@@ -1,8 +1,3 @@
-/* BitText ID: B_MX3QJUeD                   http://bittext.ch/raw/?ID=B_MX3QJUeD
-
-      -- UNDER DEVELOPMENT - BASIC THINGS WORK, BUT NEEDS MORE TESTING --
-             -- LIGHTLY TESTED ON MAC OS X, Windows, and Debian. --
-   
 --------------------------------------------------------------------------------
 OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                          March 23, 2014
 --------------------------------------------------------------------------------
@@ -26,15 +21,7 @@ devices and when traveling on the internet.
 
 OT7 produces an encrypted file that remains secret when sent over unsecure 
 channels.  
- 
-This diagram outlines the OT7 encryption process:
 
-        Plaintext file                                   Plaintext file
-                      \                                 /
-                       Encrypt ---> [OT7 file] --> Decrypt
-                      /                               /     
- One-time pad key file                               One-time pad key file
- 
 SCOPE: The OT7 protocol is limited to encryption and decryption of a defined 
 file format. Production of one-time pad key files for the OT7 command line tool
 is outside the scope of the OT7 protocol. Each user will need to supply their
@@ -43,5 +30,3 @@ own key files.
 LICENSE: This is public domain software. I am grateful to Edward Snowden for
 revealing why encryption is necessary. Please consider donating to his defense 
 fund at http://freesnowden.is . 
-
-*/
