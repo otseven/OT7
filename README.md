@@ -1,6 +1,5 @@
---------------------------------------------------------------------------------
-OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                          March 23, 2014
---------------------------------------------------------------------------------
+OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                          
+March 23, 2014
 
 PURPOSE: A tool and protocol for one-time pad encryption.
 
