@@ -1,4 +1,5 @@
-OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                        March 23, 2014
+OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                        
+March 29, 2014
 
 PURPOSE: A tool and protocol for one-time pad encryption.
 
@@ -28,3 +29,6 @@ own key files.
 LICENSE: This is public domain software. I am grateful to Edward Snowden for
 revealing why encryption is necessary. Please consider donating to his defense 
 fund at http://freesnowden.is . 
+
+        -- THIS IS ALPHA CODE SUITABLE FOR EXPERIMENTAL USE ONLY --
+           -- LIGHTLY TESTED ON DEBIAN, MAC OSX, AND WINDOWS --
