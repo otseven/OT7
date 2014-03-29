@@ -1,9 +1,10 @@
-/* BitText ID: B_MX3QJUeD                   http://bittext.ch/raw/?ID=B_MX3QJUeD
+/* https://github.com/otseven/OT7           http://bittext.ch/raw/?ID=B_MX3QJUeD
 
-      -- UNDER DEVELOPMENT - BASIC THINGS WORK, BUT NEEDS MORE TESTING --
+          -- THIS IS ALPHA CODE SUITABLE FOR EXPERIMENTAL USE ONLY --
+             -- LIGHTLY TESTED ON DEBIAN, MAC OSX, AND WINDOWS --
    
 --------------------------------------------------------------------------------
-OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                          March 23, 2014
+OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                          March 29, 2014
 --------------------------------------------------------------------------------
 
 PURPOSE: A tool and protocol for one-time pad encryption.
@@ -47,10 +48,10 @@ fund at http://freesnowden.is .
 
 RECORD FORMAT: Each OT7 file is laid out according to this record format:
  
-                        O T 7   R E C O R D   F O R M A T
+                       O T 7   R E C O R D   F O R M A T
  
-                                           variable
-                            24 bytes        length
+                                            variable
+                             24 bytes        length
                        ---------------------------------
                        |   H E A D E R   |   B O D Y   |
                        ---------------------------------
@@ -106,7 +107,7 @@ H E A D E R
 
 The header of an OT7 record identifies the one-time pad key used to encrypt the 
 record. The header is designed to appear to an attacker as random bits. Almost
-every OT7 header will be unique with rare collisions being possible. 
+every OT7 header will be unique with very rare collisions being possible. 
  
                   FIELD SIZE    
 FIELD NAME         IN BYTES                DESCRIPTION
@@ -185,11 +186,11 @@ attacker, then a password could prevent disclosure of the plaintext.
 
 The encrypted bytes of the body are composed of three layers of information:
 
-           ================== ENCRYPTED BYTES ====================
+             ================== ENCRYPTED BYTES ====================
                               ^  ^  ^  ^  ^
-         1 ----------------- true random bytes -------------------
-         2 --------------- password hash stream ------------------
-         3 ------------ plaintext and filler bytes ---------------
+           1 ----------------- true random bytes -------------------
+           2 --------------- password hash stream ------------------
+           3 ------------ plaintext and filler bytes ---------------
      
 Layer 1 is the true random bytes from the one-time pad key file. These are
 produced by a hardware random number generator.
@@ -203,11 +204,11 @@ plaintext.
 Encrypted bytes are simply the result of XOR'ing bytes drawn from each of the
 three layers.
 
-        EncryptedByte = TrueRandomByte ^ PasswordHashByte ^ PlainTextByte
+        EncryptedByte = PlainTextByte ^ (TrueRandomByte ^ PasswordHashByte)
      
 Decryption uses this formula:
 
-        PlainTextByte = EncryptedByte ^ TrueRandomByte ^ PasswordHashByte
+        PlainTextByte = EncryptedByte ^ (TrueRandomByte ^ PasswordHashByte)
      
 Like the header, the body of an OT7 record appears to an attacker as true 
 random data.
@@ -248,10 +249,11 @@ FillSize        0 to 8 bytes depending on SizeBits
 
     The number of fill bytes, an integer stored in LSB-to-MSB order. Only the 
     non-zero bytes of the integer are stored, being from 0 to 8 bytes as defined 
-    by the high 4 bits of the SizeBits field. Fill bytes are optional padding 
-    bytes used to mask the size of the plaintext. By default a random number of
-    fill bytes are used. The command line option '-f' can be used to specify a 
-    certain number of fill bytes.
+    by the high 4 bits of the SizeBits field. 
+    
+    Fill bytes are optional padding bytes used to mask the size of the 
+    plaintext. By default a random number of fill bytes are used. The command 
+    line option '-f' can be used to specify a certain number of fill bytes.
     
 --------------------------------------------------------------------------------
 FileNameSize    2 bytes      
@@ -265,8 +267,14 @@ FileName        FileNameSize bytes
 
     Name of the plaintext file, a printable ASCII string without a zero at the 
     end. The FileNameSize field indicates how many characters are in the string.
+    
     This field can be excluded during encryption by using the '-nofilename'
     command line parameter.
+    
+    Note that some care is needed when decrypting a file with an embedded file 
+    name to make sure that it doesn't accidentally overwrite an existing file 
+    with the same name. The '-od' command line option can be used to override 
+    the embedded file name, using a specified file name instead.
         
 --------------------------------------------------------------------------------
 TextFill        TextSize+FillSize bytes     
@@ -295,11 +303,11 @@ SumZ            8 bytes
     plaintext.
     
     If the integrity check fails, the decrypted output file is still produced,
-    but with an error message to report that the contents have been corrupted.
+    but with an error message reporting that the contents have been corrupted.
     Media defects have a limited impact on an OT7 record if they occur in the
     TextFill field: errors are limited only to the individual bytes where they 
-    occur. A media error in the fields prior to TextFill could cause the 
-    whole decryption process to fail.
+    occur. A media error in the fields prior to TextFill could cause the whole
+    decryption process to fail.
    
     The checksum function is Skein1024.
 
@@ -311,12 +319,14 @@ SumZ            8 bytes
 KEY FILE FORMAT 
 --------------------------------------------------------------------------------
 
-Key files are simply random binary data. Bytes must be generated by a true 
-random number generator which produces a uniform distribution over the full 
-range of values from 0 to 255.
+Key files have no special structure. Any file that contains truely random binary 
+data can be used as a key file.  
 
-It takes some kind of natural process to produce perfectly random numbers, so a 
-hardware random number generator is needed. 
+It is essential to use true random numbers because the security of one-time pad 
+encryption depends on the quality of the key.
+
+Some kind of natural process is required to produce perfectly random numbers, so 
+a hardware random number generator is needed. 
 
 Since the NSA weakens commercial hardware random number generators, you should 
 build your own. 
@@ -481,43 +491,59 @@ KeyID( 143 )
   
 } // End of the key definition for KeyID 143.
 
+// There can be any number of definitions in a 'key.map' file.
+
+// This is another definition that will be used for general purpose encryption.
+KeyID( 7891 )  
+{
+    -keyfile general.key
+    -ID general
+    -p "password for general purpose encryption"
+}
+
 //==============================================================================
 //======================== END KEY.MAP FILE CONTENTS ===========================
 //==============================================================================
 
-With the above 'key.map' file, it becomes possible to encrypt an email message
-for Dan Jones in several different ways.
-
-Here are a few examples: 
-
- ot7 -e emailJun2.txt -KeyID 143
+With the above 'key.map' file, it becomes possible to encrypt and decrypt a file 
+named 'myfile.zip' as follows:
  
- ot7 -e emailJun2.txt -ID "Dan Jones" 
+Encrypting: ot7 -e myfile.zip -oe myfile.ot7 -ID general
+
+Decrypting: ot7 -d myfile.ot7
+
+Here's an example of how to encrypt an email message for Dan Jones in several
+different ways:
  
- ot7 -e emailJun2.txt -ID danjones@privatemail.net
+    ot7 -e email.txt -KeyID 143
+
+    ot7 -e email.txt -ID "Dan Jones" 
+
+    ot7 -e email.txt -ID danjones@privatemail.net
       
- ot7 -e emailJun2.txt -ID BM-GtkZoid3xpT4nwxezDfpWtYAfY6vgyHd
- 
- ot7 -e emailJun2.txt -ID "Dan Jones" -p "an example password"
+    ot7 -e email.txt -ID BM-GtkZoid3xpT4nwxezDfpWtYAfY6vgyHd
 
-All of the above commands will encrypt the file 'emailJun2.txt' to produce an 
+    ot7 -e email.txt -ID "Dan Jones" -p "a special password for today"
+
+All of the above commands will encrypt the file 'email.txt' to produce an 
 encrypted file named 'Dan.txt'.  
 
 If Dan Jones has a key definition for KeyID( 143 ), then he can decrypt 
 'Dan.txt' using one of these two command lines:
 
- ot7 -d Dan.txt
- 
- ot7 -d Dan.txt -p "an example password" 
+    ot7 -d Dan.txt
 
-... resulting in the file 'emailJun2.txt' being produced in his current 
+    ot7 -d Dan.txt -p "a special password for today" 
+
+... resulting in the file 'email.txt' being produced in his current 
 directory. 
  
 Dan Jones may have different optional parameters for his version of the
 key definition for KeyID( 143 ) provided that the same key file names 
 and password are included. 
- 
+  
 */
+
 #define APPLICATION_NAME_STRING "ot7"
             // Name of this application.
             
@@ -1305,7 +1331,7 @@ int Result;
      
 //------------------------------------------------------------------------------
  
-#define OT7_VERSION_STRING "OT7 -- One-Time Pad Encryption Tool v4"
+#define OT7_VERSION_STRING "OT7 -- One-Time Pad Encryption Tool v5"
             // Version identifier for this application.
 
 // This usage info is printed to standard output for the '-h' command. 
@@ -1313,10 +1339,7 @@ int Result;
 s8*
 Help[] =
 {
-"",
-"This utility handles the encryption and decryption of files using one-time pad",
-"encryption. Encryption produces a file format called OT7. Decryption converts an",
-"OT7 file back into a plaintext file.",
+"This tool encrypts and decrypts files using one-time pad encryption.",
 "--------------------------------------------------------------------------------",
 "",
 "U S A G E   I N F O:",
@@ -1328,7 +1351,7 @@ Help[] =
 "",
 "    -binary",
 "        Select binary encoding for the encrypted file. The default encoding is",
-"        base64.",
+"        base64, a convenient form for email messages.",
 "",
 "    -d [<file name>]",    
 "        Decrypt the specified file. If the file name is not specified, then",
@@ -1367,6 +1390,13 @@ Help[] =
 "        Specify the KeyID value used to generate the header of a file being",
 "        encrypted.",
 "",
+"        A KeyID number is the primary identifier of a key definition.",
+"",
+"        KeyID numbers can be expressed in decimal or in hexadecimal form, eg.",
+"        '-KeyID 0x41ad9' or '-KeyID 8189'. Values can range from 0 to the",
+"        largest number that can be stored in a 64-bit field,",
+"        18446744073709551616.",
+"",
 "    -keymap <file name>",
 "        Specify the name of the file to use for looking up a key definition.",
 "        If this parameter is not used, then the default key map file name is", 
@@ -1377,11 +1407,11 @@ Help[] =
 "        Disable filename inclusion in OT7 records during encryption. Using this",
 "        option will save space in the OT7 record and make the name of the",
 "        decrypted file dependant on a parameter set at decryption time. See the",
-"       -od option for how to specify the name of the decrypted output file.",
+"        -od option for how to specify the name of the decrypted output file.",
 "",
 "    -od <file name>",
 "        Specify the output file name for decryption - optional. This defaults to",
-"        the file name embedded in the OT7 file, or to 'ot7d.out' if there is no",
+"        the file name embedded in the OT7 file or to 'ot7d.out' if there is no",
 "        embedded filename.", 
 "",
 "    -oe <file name>",
@@ -1389,14 +1419,15 @@ Help[] =
 "        'ot7e.out' if this parameter is not used.", 
 "", 
 "    -p <password string>",
-"        For an extra layer of security, a password can be used. The same",
+"        A password can be used for an extra layer of security. The same",
 "        password used for encrypting a file will be needed to decrypt it.",
 "        Passwords are either a single word or a phrase enclosed in double",
-"        quotes, and can be up to 2000 characters long. If no password is",
-"        specified on the command line, then the password specified in a",
-"        key definition is used. If no password is specified in a key",
-"        definition, then the default password compiled into the ot7 command",
-"        line tool is used.",
+"        quotes, and can be up to 2000 characters long.",
+"",
+"        If no password is specified on the command line, then the password",
+"        specified in a key definition is used. If no password is specified",
+"        in a key definition, then the default password compiled into the ot7",
+"        command line tool is used.",
 "",
 "    -silent",
 "        Disable verbose mode to stop printing status messages.",
@@ -1410,31 +1441,234 @@ Help[] =
 "        Enable verbose mode to print status messages.",
 "",
 "--------------------------------------------------------------------------------",
-"A 'key.map' configuration file can be used to simplify the use of ot7. How to do",
-"that is described in the source code file 'OT7.c'.",
 "",
 "The following examples are how to use ot7 without a 'key.map' configuration",
 "file.",
 "",
 "Encryption examples:",
 "",
+"    ot7 -e note.txt -oe note.b64 -KeyID 143 -keyfile 143.key",
 "    ot7 -e note.txt -oe note.b64 -KeyID 143 -keyfile 143.key -p \"my password\"",
 "    ot7 -e note.txt -oe note.bin -KeyID 143 -keyfile 143.key -binary",
-"    ot7 -e June.zip -oe June.b64 -KeyID 143 -keyfile 143.key -v -f 2000",
 "",
 "Decryption examples:",
 "",
+"    ot7 -d note.b64 -KeyID 143 -keyfile 143.key",
 "    ot7 -d note.b64 -KeyID 143 -keyfile 143.key -p \"my password\"",
 "    ot7 -d note.b64 -KeyID 143 -keyfile 143.key -erasekey",
 "    ot7 -d note.b64 -KeyID 143 -keyfile 143.key -od note.txt",
 "",           
-"To print the number of available key bytes in key files:",
+"To print the number of available key bytes in a key file:",
 "",
-"    ot7 -unused -KeyID 143",
 "    ot7 -unused -keyfile 143.key",
 "",
 "--------------------------------------------------------------------------------",
-  
+"",
+"A 'key.map' configuration file can be used to simplify the use of ot7.",
+"",
+"With a 'key.map' file like the one listed below, it becomes possible to encrypt",
+"and decrypt a file named 'myfile.zip' as follows:",
+"",
+"Encrypting: ot7 -e myfile.zip -oe myfile.ot7 -ID general",
+"",
+"Decrypting: ot7 -d myfile.ot7",
+"",
+"Here's an example of how to encrypt an email message for Dan Jones in several",
+"different ways:",
+"",
+"    ot7 -e email.txt -KeyID 143",
+"    ot7 -e email.txt -ID \"Dan Jones\"",
+"    ot7 -e email.txt -ID danjones@privatemail.net",
+"    ot7 -e email.txt -ID BM-GtkZoid3xpT4nwxezDfpWtYAfY6vgyHd",
+"    ot7 -e email.txt -ID \"Dan Jones\" -p \"a special password for today\"",
+"",
+"All of the above commands will encrypt the file 'email.txt' to produce an", 
+"encrypted file named 'Dan.txt'.",  
+"",
+"If Dan Jones has a key definition for KeyID( 143 ), then he can decrypt", 
+"'Dan.txt' using one of these two command lines:",
+"",
+"    ot7 -d Dan.txt",
+"",
+"    ot7 -d Dan.txt -p \"a special password for today\"", 
+"",
+"... resulting in the file 'email.txt' being produced in his current", 
+"directory.", 
+"",
+"--------------------------------------------------------------------------------",
+"KEY.MAP FILE FORMAT - How to make a configuration file.",
+"--------------------------------------------------------------------------------",
+"",
+"'key.map' files are another source of input for the ot7 command line tool.",
+"",
+"A 'key.map' file provides configuration information.",
+"",
+"It's called a key map because it tells where the key files are located and also",
+"how KeyID numbers map to one-time pad key files.",
+"",
+"A 'key.map' file is composed of one or more key definitions. Each key definition", 
+"organizes the information needed to use one-time pad key files for a particular", 
+"purpose.",
+"",
+"It may be convenient to store frequently used parameter settings as part of a", 
+"key definition in a 'key.map' file instead of typing them on the command line.",
+"",
+"Here is an example 'key.map' file that you can use as a template for your own:",
+"",
+"//==============================================================================",
+"//======================= BEGIN KEY.MAP FILE CONTENTS ==========================",
+"//==============================================================================",
+"",
+"//<---- 'key.map' files may contain comments which begin with '//' and continue",  
+"//      to the end of the line.",
+"//",
+"// A 'key.map' file may contain one or more key definitions.",
+"//",
+"// A key definition has this form:",
+"//",
+"//    KeyID( 143 )",
+"//    {",
+"//          ...the parameters of the key...",
+"//    }",
+"//",
+"// where:",
+"//",
+"//    '143' is the KeyID number of the key definition, the primary identifier", 
+"//          of the definition. KeyID numbers must be unique within the", 
+"//          'key.map' file in which they are used.",
+"//",
+"//    KeyID numbers can be expressed in decimal or in hexadecimal form, eg.", 
+"//    '-KeyID 0x41ad9' or '-KeyID 8189'. Values can range from 0 to the largest",
+"//    number that can be stored in a 64-bit field, 18446744073709551616.",
+"//",
+"//    The KeyID is used to make the KeyIDHash stored in the header of an OT7", 
+"//    record.", 
+"//",
+"//    When an OT7 record is decrypted, the KeyIDHash in the OT7 record header",  
+"//    implies which key definition to used for decryption. This lookup procedure", 
+"//    can be overridden by specifying that a certain KeyID be used instead with", 
+"//    the '-KeyID <number>' command line option.",
+"//",
+"//    The parameters of a key definition follows a consistent format:",
+"//",
+"//        Each parameter is listed on a separate line.",
+"//",
+"//        Each parameter begins with a parameter tag that starts with '-', for",  
+"//        example '-keyfile' or '-ID'.",
+"//",
+"//        One or more spaces separate the parameter tag from any data that",
+"//        follows. Multi-word parameter values are enclosed in quotes.",
+"",
+"// Here is an example key definition:",
+"",
+"KeyID( 143 )",
+"{",
+"    //--------------------------------------------------------------------------",
+"    // K E Y   F I L E S",
+"    //--------------------------------------------------------------------------",
+"",
+"    // A key definition refers to a pool of one or more one-time pad key files,",
+"    // each one listed on a separate line with the parameter tag '-keyfile'.",
+"",
+"    // This is the pool of key files for this key definition:",
+"",
+"    -keyfile file1.key",
+"    -keyfile /home/myfiles/file2.key",
+"    -keyfile some_other_file.bin",
+"    -keyfile any_other_filename.zip",
+"    -keyfile \"a file name with spaces.key\"",
+"",
+"    // Each key file contains truly random bytes that are only used once.", 
+"    //",
+"    // Key files need to be writable only if key bytes are erased after use by", 
+"    // selecting the '-erasekey' option. Otherwise, key files may be read-only.",
+"    //",
+"    // To complete a key definition, it is sufficient to define just one key",
+"    // file. If several key files are used, then the ordering of the files in", 
+"    // the key definition determines the order in which they are used for",
+"    // encryption and decryption.",
+"    //",
+"    // A decryptor uses the KeyID number to look up a particular key definition.", 
+"    // If that key definition contains multiple key files, then it may be", 
+"    // necessary to try to decrypt using several different key files before the", 
+"    // right one is found to successfully decrypt the message. The decryption", 
+"    // routine automatically handles this search process, but it will be slower", 
+"    // than using just one key file per key definition.",
+"",
+"    //--------------------------------------------------------------------------",
+"    // P A S S W O R D",
+"    //--------------------------------------------------------------------------",
+"",
+"    // Passwords provide an extra layer of security in addition to that provided", 
+"    // by one-time pad key files. When a password is used to encrypt a file,", 
+"    // then the same password must be used to decrypt the file.",
+"    //",
+"    // Passwords can be stored in key definitions or entered on the command",
+"    // line. If a password is entered on the command line, then it overrides", 
+"    // any password that might also be stored in a key definition. In this", 
+"    // example, a password is stored in the key definition.",
+"",
+"    -p \"This is the password for encrypting files sent to Dan Jones.\"",
+"",
+"    // Passwords are either single words or phrases enclosed in double quotes",
+"    // Passwords may be up to 2000 characters long. Longer passwords are more", 
+"    // secure than shorter ones.",
+"    //",
+"    // If no password is specified by the user, then the default password",
+"    // compiled into the OT7 application is used. See DefaultPassword for where",
+"    // that is defined.",
+"",
+"    //--------------------------------------------------------------------------",
+"    // O T H E R   O P T I O N S",
+"    //--------------------------------------------------------------------------",
+"",
+"    // For convenience, other command line options can be stored with a key", 
+"    // definition. This extra information will automatically be presented to the", 
+"    // command line parser each time the key is used during encryption or", 
+"    // decryption. This allows an encryption policy to be set up once and then", 
+"    // used simply by referring to the key definition with either the '-KeyID'", 
+"    // or '-ID' command line options.",
+"    //",
+"    // Secondary identifiers can optionally be associated with a key definition", 
+"    // to give another way to refer to a key definition. List each identifier", 
+"    // on a separate line with the parameter tag '-ID'. Any string can be used", 
+"    // as an identifier. A phrase can be used as an identifier by enclosing it",
+"    // in double quotes, as shown below.",
+"",
+"    -ID \"Dan Jones\"",
+"    -ID danjones@privatemail.net",
+"    -ID BM-GtkZoid3xpT4nwxezDfpWtYAfY6vgyHd",
+"",
+"    // Use the '-erasekey' option if you want to erase key bytes after use.",
+"    -erasekey",
+"",
+"    // Use the '-v' option to enable verbose mode which prints status",
+"    // messages.",
+"    -v",
+"",
+"    // Use the '-oe' option to name the default output file used when encrypting",
+"    // files. In this example, encrypted files are written to 'Dan.txt'. If the", 
+"    // '-oe' option is included on the command line, it will override this", 
+"    // default setting.",
+"    -oe Dan.txt",
+"",
+"} // End of the key definition for KeyID 143.",
+"",
+"// There can be any number of definitions in a 'key.map' file.",
+"",
+"// Here is another definition to be used for general purpose encryption.",
+"KeyID( 7891 )",  
+"{",
+"    -keyfile general.key",
+"    -ID general",
+"    -p \"password for general purpose encryption\"",
+"}",
+"",
+"//==============================================================================",
+"//======================== END KEY.MAP FILE CONTENTS ===========================",
+"//==============================================================================",
+"",
+
     // This 0 marks the end of this list of strings.
     0    
 };
@@ -2130,6 +2364,11 @@ u32   ParseWordOrQuotedPhrasePreservingQuotes(
             s8** S, 
             s8*  OutputBuffer,
             u32  OutputBufferSize );
+            
+u32   ParseWordsOrQuotedPhrase( 
+            s8** S, 
+            s8* OutputBuffer,
+            u32 OutputBufferSize );
 
 void  PickKeyID( 
             Param* KeyID,
@@ -2322,10 +2561,10 @@ Exit://
     // If the verbose mode is enabled, then report final exit status.
     if( IsPrintingExitMessage )
     {
-        printf( "Exiting from OT7 with result code %d.\n", Result );
-        
         printf( "All working buffers have been cleared.\n" );
          
+        printf( "Exiting OT7 with result code %d.\n", Result );
+        
         // Print a dividing line between OT7 sessions in verbose mode to make 
         // reading log files easier.
         printf( "--------------------------------------------------------------"
@@ -3988,6 +4227,10 @@ DecryptFileUsingKeyFile( OT7Context* d )
         if( IsVerbose.Value )
         {
             printf( "HeaderKey doesn't match key file and password.\n" );
+            
+            printf( "This can happen if key bytes have been erased.\n" );
+            
+            printf( "Can't decrypt using key file '%s'.\n", d->KeyFileName );
         }
         
         // Exit via the error path.
@@ -6476,7 +6719,7 @@ EncryptFileUsingKeyFile( OT7Context* e )
     // Print status message if verbose output is enabled.
     if( IsVerbose.Value )
     {
-        printf( "KeyAddress is %s.\n",
+        printf( "KeyAddress = %s.\n",
                  ConvertIntegerToString64( e->KeyAddress ) );
     }
                 
@@ -7270,7 +7513,7 @@ EraseUsedKeyBytesInOneTimePad(
             c->TrueRandomKeyBuffer[i] = 
                 GetNextByteFromPasswordHashStream(c);
         }
- 
+   
         // Write the block of pseudo-random bytes to the one-time pad file.
         BytesWritten = 
             WriteBytes( c->KeyFileHandle, 
@@ -10426,6 +10669,11 @@ OpenKeyFile( s8* KeyFileName )
 |    01Mar14 Move printing of the application banner to this routine so that
 |            status messages during parsing will be printed after the 
 |            application name and version number.
+|    29Mar14 Moved test for no parameters to following printing of the 
+|            application banner. Fixed parsing of multi-word phrases contained
+|            in quotes. Revised to use ParseWordsOrQuotedPhrase() instead of
+|            ParseWordOrQuotedPhrase() which was clipping multi-word phrases
+|            at the first space.
 ------------------------------------------------------------------------------*/
     // OUT: Result code to be passed back to the calling application, one of the
     //      values with the prefix 'RESULT_...'.
@@ -10447,18 +10695,7 @@ ParseCommandLine(
     
     // Set the default result code to be no error.
     result = RESULT_OK;
-    
-    // If no command line parameters are given, return the result code for that.
-    if( argc < 2 )
-    {
-        // Return the result code meaning that no command line parameters were
-        // given.
-        result = RESULT_NO_COMMAND_LINE_PARAMETERS_GIVEN;
-        
-        // Go clean up and exit from this routine.
-        goto CleanUp;
-    }
-    
+   
     // Scan the parameters following the program name to see if verbose mode
     // should be enabled/disabled before interpreting the other parameters.
     for( i = 1; i < argc; i++ ) 
@@ -10513,6 +10750,19 @@ ParseCommandLine(
         IsAppNamePrinted = 1;
     }
     
+    //--------------------------------------------------------------------------
+    
+    // If no command line parameters are given, return the result code for that.
+    if( argc < 2 )
+    {
+        // Return the result code meaning that no command line parameters were
+        // given.
+        result = RESULT_NO_COMMAND_LINE_PARAMETERS_GIVEN;
+        
+        // Go clean up and exit from this routine.
+        goto CleanUp;
+    }
+     
     //--------------------------------------------------------------------------
      
     // For each of the parameters following the program name, interpret them one
@@ -10766,10 +11016,10 @@ ParseCommandLine(
                 // Refer to the identifier with the parsing cursor 'S'.
                 S = argv[i+1];
                 
-                // Parse the next word or quoted phrase from a string, removing 
-                // any quotes. Use 'v' to count the number of bytes in the value 
-                // string parsed from the text line. 
-                v = ParseWordOrQuotedPhrase( 
+                // Parse the next word(s) or quoted phrase from a string, 
+                // removing any quotes. Use 'v' to count the number of bytes 
+                // in the value string parsed from the text line. 
+                v = ParseWordsOrQuotedPhrase( 
                         &S,   // IN/OUT: Address of the address of the current 
                               //         character in the string being parsed.
                               //
@@ -10850,10 +11100,10 @@ ParseCommandLine(
                 // Refer to the file name with the parsing cursor 'S'.
                 S = argv[i+1];
                 
-                // Parse the next word or quoted phrase from a string, removing 
-                // any quotes. Use 'v' to count the number of bytes in the value 
-                // string parsed from the text line. 
-                v = ParseWordOrQuotedPhrase( 
+                // Parse the next word(s) or quoted phrase from a string, 
+                // removing any quotes. Use 'v' to count the number of bytes in 
+                // the value string parsed from the text line. 
+                v = ParseWordsOrQuotedPhrase( 
                         &S,   // IN/OUT: Address of the address of the current 
                               //         character in the string being parsed.
                               //
@@ -11226,10 +11476,10 @@ ParseCommandLine(
                 // Refer to the password with the parsing cursor 'S'.
                 S = argv[i+1];
                 
-                // Parse the next word or quoted phrase from a string, removing 
-                // any quotes. Use 'v' to count the number of bytes in the value 
-                // string parsed from the text line. 
-                v = ParseWordOrQuotedPhrase( 
+                // Parse the word(s) or quoted phrase from a string, removing 
+                // any quotes. Use 'v' to count the number of bytes in the 
+                // value string parsed from the text line. 
+                v = ParseWordsOrQuotedPhrase( 
                         &S,   // IN/OUT: Address of the address of the current 
                               //         character in the string being parsed.
                               //
@@ -11407,6 +11657,9 @@ CleanUp://
 |
 | HISTORY: 
 |    22Feb14 Factored out of ParseCommandLine().
+|    29Mar14 Revised to use ParseWordsOrQuotedPhrase() instead of
+|            ParseWordOrQuotedPhrase() which was clipping multi-word phrases
+|            at the first space.
 ------------------------------------------------------------------------------*/
     // OUT: Result code, defined by symbols starting with 'RESULT_', where 0 is
     //      no error.
@@ -11470,10 +11723,10 @@ ParseFileNameParameter(
     // Refer to the file name with the parsing cursor 'S'.
     S = FileNameString;
     
-    // Parse the next word or quoted phrase from a string, removing any quotes. 
+    // Parse the word(s) or quoted phrase from a string, removing any quotes. 
     // Use 'v' to count the number of bytes in the value string parsed from the 
     // text line. 
-    v = ParseWordOrQuotedPhrase( 
+    v = ParseWordsOrQuotedPhrase( 
             &S,   // IN/OUT: Address of the address of the current character in
                   //         the string being parsed.
                   //
@@ -12077,6 +12330,164 @@ ParseWordOrQuotedPhrasePreservingQuotes(
     // Append a string terminator byte to the output buffer.
     *OutputBuffer = 0;
      
+    // Update the string cursor for the caller.
+    *S = s;
+    
+    // Return the number of bytes parsed to the output buffer.
+    return( ByteCount );
+}
+
+/*------------------------------------------------------------------------------
+| ParseWordsOrQuotedPhrase
+|-------------------------------------------------------------------------------
+|
+| PURPOSE: To parse several words or a quoted phrase from a string, removing any 
+|          quotes.
+|
+| DESCRIPTION: This routine takes a parsing cursor 'S' as input which refers to
+| the zero-terminated string being parsed. 
+|
+| The text parsed is moved to OutputBuffer and terminated with a zero byte. The 
+| parsing cursor is updated to refer to the first byte after the words or 
+| quoted phrase.
+|
+| Parses words until the end of the string is reached or until the second 
+| delimiter if there are delimiters.
+|
+| Leading and trailing spaces are significant if the first character is not a
+| delimiter.
+|
+| On entry to this routine, here are three examples:
+|
+|    S
+|    |
+|    v
+|    a file name with spaces.key
+|    'a file name with spaces.key'
+|    "a file name with spaces.key"
+|
+| After parsing, the situation is:
+|
+|                               S S
+|                               | |
+|                               v |
+|    a file name with spaces.key  v
+|    'a file name with spaces.key'
+|    "a file name with spaces.key"
+|
+| ...and the OutputBuffer holds:
+|
+|    [a file name with spaces.key0]
+|
+| HISTORY: 
+|    29Mar14 From ParseWordOrQuotedPhrase().
+------------------------------------------------------------------------------*/
+    // OUT: Number of characters in the word or phrase parsed, not counting 
+    //      the terminal zero. S is updated and the result is in OutputBuffer.
+u32 //
+ParseWordsOrQuotedPhrase( 
+    s8** S, 
+          // IN/OUT: Address of the address of the current character in the
+          //         string being parsed.
+          //
+    s8* OutputBuffer,
+          // Address of the output buffer where the word or phrase should be
+          // placed.
+          //
+    u32 OutputBufferSize )
+          // Size of the output buffer in bytes.
+{
+    s8* AfterBuffer;
+    s8* s;
+    s8  Delimiter;
+    u32 ByteCount;
+    u32 StringSize;
+    
+    // Start with no bytes added to the OutputBuffer.
+    ByteCount = 0;
+    
+    // If there is no room for anything in the output buffer, then just 
+    // return 0.
+    if( OutputBufferSize == 0 )
+    {
+        return(0);
+    }
+      
+    // Refer to the address of the first byte in the string using 's' (note
+    // the lower case).
+    s = *S;
+    
+    // If S refers to a string address of zero, then there is no string to
+    // parse, so just return 0.
+    if( s == 0 )
+    {
+        return(0);
+    }
+    
+    // Count the number of bytes in the input string, not including the zero
+    // byte that marks the end.
+    StringSize = CountString( s );
+    
+    // If the string is empty, then just return zero as the number of bytes
+    // parsed.
+    if( StringSize == 0 )
+    {
+        return(0);
+    }
+
+    // Calcalate the address of the first byte after the string being parsed.
+    AfterBuffer = s + StringSize;
+ 
+    // This is the situation:
+    //
+    //   s
+    //   |
+    //   v
+    //   a file name with spaces.key
+    //   'a file name with spaces.key'
+    //   "a file name with spaces.key"
+    
+    // If the first byte is a ' or ", then set a flag indicating the presence of 
+    // a delimited value.
+    if( (*s == '\'') || (*s == '"') )
+    {
+        // Save the delimiter value.
+        Delimiter = *s;
+        
+        // Advance past the delimiter.
+        s++;
+    }
+    else // Not a delimited value.
+    {
+        // Use 0 to mean the parameter is not a delimited by a quote instead of 
+        // a space.
+        Delimiter = 0;
+    }
+            
+    // Copy the words or delimited phrase to the output buffer, stopping at the 
+    // end of the string, when the output buffer is full, or at the appropriate 
+    // delimiter.
+    while( *s && 
+           ( ByteCount < (OutputBufferSize - 1) ) &&
+           !( (Delimiter != 0) && (*s == Delimiter) ) )
+    {
+        // Copy the byte to the value buffer, advancing both pointers.
+        *OutputBuffer++ = *s++;
+        
+        // Account for adding a byte to the OutputBuffer.
+        ByteCount++;
+    }
+     
+    // Append a string terminator byte to the output buffer.
+    *OutputBuffer = 0;
+    
+    // If 's' points to a delimiter, and a delimiter began the phrase parsed,
+    // then advance 's' by one byte.
+    if( Delimiter && (*s == Delimiter) )
+    {
+        s++;
+    }
+    
     // Update the string cursor for the caller.
     *S = s;
     
@@ -13321,6 +13732,8 @@ ReadU64( FILE* F, u64* Result )
 |            unused bytes.
 |    17Mar14 Made working buffers local to this routine and added memory 
 |            clearing of buffers and variables used.
+|    29Mar14 Added ability to specify key files indirectly using -KeyID or -ID 
+|            parameters.
 ------------------------------------------------------------------------------*/
     // OUT: Result code to be passed back to the calling application, one of
     //      the values with the prefix 'RESULT_...'.
@@ -13336,6 +13749,14 @@ ReportAvailableKeyBytes()
     u64   UnusedBytes;
     u8    KeyHashBuffer[KEY_FILE_HASH_SIZE]; // 8 bytes
     s8    KeyHashStringBuffer[KEY_FILE_HASH_STRING_BUFFER_SIZE]; // 17 bytes
+    static OT7Context e;
+    
+    // Zero an OT7 context record to be filled in from the key map.
+    ZeroBytes( (u8*) &e, sizeof(OT7Context) );
+     
+    // Locate the key files based on command line input as augmented by other 
+    // information found in the 'key.map' file.
+    IdentifyEncryptionKey( &e );
      
     // Start the total of unused bytes at 0.
     TotalUnusedBytes = 0;
@@ -13479,6 +13900,7 @@ CleanUp://
 //////////    
     
     // Clear working buffers used by this routine.       
+    ZeroBytes( (u8*) &e, sizeof(OT7Context) );
     ZeroBytes( KeyHashBuffer, KEY_FILE_HASH_SIZE ); 
     ZeroBytes( (u8*) KeyHashStringBuffer, KEY_FILE_HASH_STRING_BUFFER_SIZE );
     ZeroBytes( (u8*) &C, sizeof( ThatItem ) );
@@ -13885,7 +14307,7 @@ SelectFillSize(
     // plain text. To avoid possible division by zero, add one to the plain 
     // text size.
     FillByteCount = RandomValue % (PlaintextSize+1);
-
+ 
     // Return the number of fill bytes to use.
     return( FillByteCount );
 }
