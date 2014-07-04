@@ -19,17 +19,16 @@ Features:
         - Completely documented source code to support validation.
 
 Requires:
- 
-        - User-generated random key files.
+        
         - C compiler and a command line environment.
+        - User-generated random key files.
 
-July 4, 2014 status: everything seems to work, but the hash function has yet 
+July 4, 2014 status - Everything seems to work, but the hash function has yet 
 to be validated relative to the reference design. This only has a bearing on
 the password protection layer since the one-time pad encryption part is secure 
-if the key is truly random and secret.
+if the key is truly random and secret. OT7 has been lightly tested on Debian,
+Mac OSX, and Windows.
  
-            -- LIGHTLY TESTED ON DEBIAN, MAC OSX, AND WINDOWS --
-
 LICENSE: This is public domain software. I am grateful to Edward Snowden for
 revealing why encryption is necessary. Please consider donating to his defense 
 fund at http://freesnowden.is . 
