@@ -1,9 +1,9 @@
 OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                        
-March 29, 2014
 
-PURPOSE: A tool and protocol for one-time pad encryption.
 
 DESCRIPTION: OT7 is an implementation of the one-time pad encryption method. 
+It's a portable command line tool that works on many operating systems. OT7
+should build with most C compilers.
 
 Encryption is needed to protect intellectual property held on data storage 
 devices and when traveling on the internet.
@@ -11,19 +11,26 @@ devices and when traveling on the internet.
 OT7 produces an encrypted file that remains secret when sent over unsecure 
 channels.  
 
-From https://en.wikipedia.org/wiki/One_time_pad:
+Features:
 
-"In cryptography, the one-time pad (OTP) is a type of encryption that is 
-impossible to crack if used correctly. Each bit or character from the plaintext 
-is encrypted by a modular addition with a bit or character from a secret random 
-key (or pad) of the same length as the plaintext, resulting in a ciphertext. If 
-the key is truly random, as large as or greater than the plaintext, never reused 
-in whole or part, and kept secret, the ciphertext will be impossible to decrypt 
-or break without knowing the key."
+        - Convenient key management using a configuration file.
+        - Password protection.
+        - Optional key erasure for forward security.
+        - Completely documented source code to support validation.
+
+Requires:
+ 
+        - User-generated random key files.
+        - C compiler and a command line environment.
+
+July 4, 2014 status: everything seems to work, but the hash function has yet 
+to be validated relative to the reference design. This only has a bearing on
+the password protection layer since the one-time pad encryption part is secure 
+if the key is truly random and secret.
+ 
+            -- LIGHTLY TESTED ON DEBIAN, MAC OSX, AND WINDOWS --
 
 LICENSE: This is public domain software. I am grateful to Edward Snowden for
 revealing why encryption is necessary. Please consider donating to his defense 
 fund at http://freesnowden.is . 
 
-        -- THIS IS ALPHA CODE SUITABLE FOR EXPERIMENTAL USE ONLY --
-           -- LIGHTLY TESTED ON DEBIAN, MAC OSX, AND WINDOWS --
