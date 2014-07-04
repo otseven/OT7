@@ -16,7 +16,7 @@ Features:
         - Convenient key management using a configuration file.
         - Password protection.
         - Optional key erasure for forward security.
-        - Completely documented source code to support validation.
+        - Completely documented source code to make validation easier.
 
 Requires:
         
