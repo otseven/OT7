@@ -1,4 +1,4 @@
-OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                        
+OT7 - ONE-TIME PAD ENCRYPTION TOOL                        
 
 
 DESCRIPTION: OT7 is an implementation of the one-time pad encryption method. 
