@@ -1,25 +1,15 @@
-/* https://github.com/otseven/OT7           http://bittext.ch/raw/?ID=B_MX3QJUeD
+/* https://github.com/otseven/OT7            
 
-          -- THIS IS ALPHA CODE SUITABLE FOR EXPERIMENTAL USE ONLY --
+          -- THIS IS BETA CODE SUITABLE FOR EXPERIMENTAL USE ONLY --
              -- LIGHTLY TESTED ON DEBIAN, MAC OSX, AND WINDOWS --
    
 --------------------------------------------------------------------------------
-OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                          March 29, 2014
+OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                       November 30, 2014
 --------------------------------------------------------------------------------
 
 PURPOSE: A tool and protocol for one-time pad encryption.
 
 DESCRIPTION: OT7 is an implementation of the one-time pad encryption method. 
-
-From https://en.wikipedia.org/wiki/One_time_pad:
-
-"In cryptography, the one-time pad (OTP) is a type of encryption that is 
-impossible to crack if used correctly. Each bit or character from the plaintext 
-is encrypted by a modular addition with a bit or character from a secret random 
-key (or pad) of the same length as the plaintext, resulting in a ciphertext. If 
-the key is truly random, as large as or greater than the plaintext, never reused 
-in whole or part, and kept secret, the ciphertext will be impossible to decrypt 
-or break without knowing the key."
 
 Encryption is needed to protect intellectual property held on data storage 
 devices and when traveling on the internet.
@@ -34,6 +24,16 @@ This diagram outlines the OT7 encryption process:
                        Encrypt ---> [OT7 file] --> Decrypt
                       /                               /     
  One-time pad key file                               One-time pad key file
+
+From https://en.wikipedia.org/wiki/One_time_pad:
+
+"In cryptography, the one-time pad (OTP) is a type of encryption that is 
+impossible to crack if used correctly. Each bit or character from the plaintext 
+is encrypted by a modular addition with a bit or character from a secret random 
+key (or pad) of the same length as the plaintext, resulting in a ciphertext. If 
+the key is truly random, as large as or greater than the plaintext, never reused 
+in whole or part, and kept secret, the ciphertext will be impossible to decrypt 
+or break without knowing the key."
  
 SCOPE: The OT7 protocol is limited to encryption and decryption of a defined 
 file format. Production of one-time pad key files for the OT7 command line tool
@@ -319,8 +319,8 @@ SumZ            8 bytes
 KEY FILE FORMAT 
 --------------------------------------------------------------------------------
 
-Key files have no special structure. Any file that contains truely random binary 
-data can be used as a key file.  
+Key files have no special structure. Any file that contains random binary data 
+can be used as a key file.  
 
 It is essential to use true random numbers because the security of one-time pad 
 encryption depends on the quality of the key.
@@ -477,7 +477,7 @@ KeyID( 143 )
     -ID BM-GtkZoid3xpT4nwxezDfpWtYAfY6vgyHd
       
     // Use the '-erasekey' option if you want to erase key bytes after use.
-    -erasekey
+    // -erasekey
     
     // Use the '-v' option to enable verbose mode which prints status
     // messages.
@@ -602,7 +602,7 @@ typedef long             s32;
 #endif // _MSC_VER
 
 #define MAX_VALUE_32BIT 0xFFFFFFFFL
-            // The maximum value that can be held in a 64-bit field.
+            // The maximum value that can be held in a 32-bit field.
 
 #define MAX_VALUE_64BIT 0xFFFFFFFFFFFFFFFFLL
             // The maximum value that can be held in a 64-bit field.
@@ -780,14 +780,9 @@ s8 TextLineBuffer[TEXT_LINE_BUFFER_SIZE]; // 2048 bytes
 // LINKED LIST SUPPORT
 //------------------------------------------------------------------------------
               
-// Mark field values.
-#define Unmarked 0 // The field is unmarked if it holds 0.
-#define Marked   1 // The field is marked if it holds 1.
- 
-typedef struct Item             Item;
-typedef struct List             List;
-typedef struct ListSystemState  ListSystemState;
-typedef struct ThatItem         ThatItem;
+typedef struct Item     Item;
+typedef struct List     List;
+typedef struct ThatItem ThatItem;
 
 /*------------------------------------------------------------------------------
 | Item
@@ -809,9 +804,6 @@ typedef struct ThatItem         ThatItem;
 ------------------------------------------------------------------------------*/
 struct Item
 {
-    //////////////////////////////////////////////////////////////////////////// 
-    //                                                                        //
-    //                               L I N K S                                //
     Item* NextItem;
             // The next item in a list of items or zero if there is no next 
             // item.
@@ -828,8 +820,6 @@ struct Item
             //
             // DataAddress is set to zero if no data is associated with the 
             // item.
-    //                                                                        //
-    //////////////////////////////////////////////////////////////////////////// 
 };
                           
 /*------------------------------------------------------------------------------
@@ -1041,13 +1031,17 @@ Param IsHelpRequested;
 
 Param IsNoFileName;
     // File name exclusion flag. This is set to 1 to exclude the file name of 
-    // the plaintext file from the header of an OT7 record during encryption.
-    // Defaults to 0 meaning that the file name should be included.                    
+    // the plaintext file from the  OT7 record during encryption. Defaults to 
+    // 0 meaning that the file name should be included.                    
  
 Param IsReportingUnusedKeyBytes;
     // Control flag used to cause the reporting of available (unused) key 
     // bytes in one-time pad key files. This is set to 1 on the the command 
     // line using the '-unused' or '-u' option, defaulting to 0 otherwise.
+ 
+Param IsTestingHash;
+    // Flag used to enable running the Skein hash function test routine.
+    // This is set to 1 on the command line using the '-testhash' option.
  
 Param IsVerbose;
     // Verbose mode flag used to enable the printing of status messages.
@@ -1080,6 +1074,7 @@ NumericParameters[] =
     &IsHelpRequested,
     &IsNoFileName,
     &IsReportingUnusedKeyBytes,
+    &IsTestingHash,
     &IsVerbose,
     &KeyID,
      
@@ -1277,7 +1272,7 @@ int Result;
     // Zero is reserved to mean successful completion. Error numbers start at 
     // 700 for compatibility with applications that use error codes assigned to 
     // small numbers. If calling applications see an error code in the 700 
-    // range, then that's confirmation that the error code was produced by ot7.
+    // range, then that's a hint that the error code was produced by ot7.
  
 #define RESULT_OK 0 
             // Use 0 for no error result for compatibility with other
@@ -1327,11 +1322,13 @@ int Result;
 #define RESULT_NO_COMMAND_LINE_PARAMETERS_GIVEN        741
 #define RESULT_OUT_OF_MEMORY                           742
 #define RESULT_RAN_OUT_OF_KEY_IN_ONE_TIME_PAD          743
-#define RESULT_TEXT_LINE_TOO_LONG_FOR_BUFFER           744
+#define RESULT_SKEIN_TEST_FINAL_RESULT_IS_INVALID      744
+#define RESULT_SKEIN_TEST_INITIALIZATION_FAILED        745
+#define RESULT_TEXT_LINE_TOO_LONG_FOR_BUFFER           746
      
 //------------------------------------------------------------------------------
  
-#define OT7_VERSION_STRING "OT7 -- One-Time Pad Encryption Tool v5"
+#define OT7_VERSION_STRING "OT7 -- One-Time Pad Encryption Tool v6"
             // Version identifier for this application.
 
 // This usage info is printed to standard output for the '-h' command. 
@@ -1431,6 +1428,12 @@ Help[] =
 "",
 "    -silent",
 "        Disable verbose mode to stop printing status messages.",
+"",
+"    -testhash",
+"        Test the Skein hash functions to make sure they are working properly.",
+"        After compiling the OT7 application, run this test as a normal part",
+"        of the validation process. A passing test means that OT7's hash",
+"        routines conform to the standard Skein algorithm.",
 "",
 "    -u or -unused",
 "        Print the the number of available key bytes in a specified key file.",
@@ -1640,7 +1643,7 @@ Help[] =
 "    -ID BM-GtkZoid3xpT4nwxezDfpWtYAfY6vgyHd",
 "",
 "    // Use the '-erasekey' option if you want to erase key bytes after use.",
-"    -erasekey",
+"    // -erasekey",
 "",
 "    // Use the '-v' option to enable verbose mode which prints status",
 "    // messages.",
@@ -1862,16 +1865,162 @@ typedef struct
 
 // set up for starting with a new type: h.T[0]=0; h.T[1] = NEW_TYPE; h.bCnt=0; 
 #define Skein_Start_New_Type(ctxPtr,BLK_TYPE)   \
-    { Skein_Set_T0_T1(ctxPtr,0,SKEIN_T1_FLAG_FIRST | SKEIN_T1_BLK_TYPE_##BLK_TYPE); (ctxPtr)->bCnt=0; }
+    { Skein_Set_T0_T1(ctxPtr,0,SKEIN_T1_FLAG_FIRST | BLK_TYPE); (ctxPtr)->bCnt=0; }
 
-// Macro to perform a key injection (same for all block sizes).
+// Macro to perform a key injection.
 #define InjectKey(r)                                       \
     for (i=0;i < SKEIN1024_STATE_WORDS;i++)                \
          X[i] += ks[((r)+i) % (SKEIN1024_STATE_WORDS+1)];  \
     X[SKEIN1024_STATE_WORDS-3] += ts[((r)+0) % 3];         \
     X[SKEIN1024_STATE_WORDS-2] += ts[((r)+1) % 3];         \
     X[SKEIN1024_STATE_WORDS-1] += (r);                
- 
+
+// Skein-1024-1024 Test Vector Data
+//
+// From Skein reference document "The Skein Hash Function Family, Version 1.3 - 
+// 1 Oct 2010" (skein1.3.pdf), Appendix B Initial Chaining Values, B.13 page 72. 
+u64 
+Skein_1024_1024_Initial_Chaining_Values[] =
+{
+0xD593DA0741E72355LL, 0x15B5E511AC73E00CLL, 0x5180E5AEBAF2C4F0LL, 0x03BD41D3FCBCAFAFLL, 
+0x1CAEC6FD1983A898LL, 0x6E510B8BCDD0589FLL, 0x77E2BDFDC6394ADALL, 0xC11E1DB524DCB0A3LL, 
+0xD6D14AF9C6329AB5LL, 0x6A9B0BFC6EB67E0DLL, 0x9243C60DCCFF1332LL, 0x1A1F1DDE743F02D4LL, 
+0x0996753C10ED0BB8LL, 0x6572DD22F2B4969ALL, 0x61FD3062D00A579ALL, 0x1DE0536E8682E539LL 
+};
+
+// From Skein reference document "The Skein Hash Function Family, Version 1.3 - 
+// 1 Oct 2010" (skein1.3.pdf), Appendix C Test Vectors, C.3 page 74. 
+u8
+Skein_1024_1024_Test_Vector_1_Message_Data[] =
+{
+    0xFF
+};
+
+u8
+Skein_1024_1024_Test_Vector_1_Result[] =
+{
+    0xE6, 0x2C, 0x05, 0x80, 0x2E, 0xA0, 0x15, 0x24, 
+    0x07, 0xCD, 0xD8, 0x78, 0x7F, 0xDA, 0x9E, 0x35, 
+    0x70, 0x3D, 0xE8, 0x62, 0xA4, 0xFB, 0xC1, 0x19,
+    0xCF, 0xF8, 0x59, 0x0A, 0xFE, 0x79, 0x25, 0x0B, 
+    0xCC, 0xC8, 0xB3, 0xFA, 0xF1, 0xBD, 0x24, 0x22,
+    0xAB, 0x5C, 0x0D, 0x26, 0x3F, 0xB2, 0xF8, 0xAF, 
+    0xB3, 0xF7, 0x96, 0xF0, 0x48, 0x00, 0x03, 0x81,
+    0x53, 0x1B, 0x6F, 0x00, 0xD8, 0x51, 0x61, 0xBC, 
+    0x0F, 0xFF, 0x4B, 0xEF, 0x24, 0x86, 0xB1, 0xEB,
+    0xCD, 0x37, 0x73, 0xFA, 0xBF, 0x50, 0xAD, 0x4A, 
+    0xD5, 0x63, 0x9A, 0xF9, 0x04, 0x0E, 0x3F, 0x29,
+    0xC6, 0xC9, 0x31, 0x30, 0x1B, 0xF7, 0x98, 0x32, 
+    0xE9, 0xDA, 0x09, 0x85, 0x7E, 0x83, 0x1E, 0x82,
+    0xEF, 0x8B, 0x46, 0x91, 0xC2, 0x35, 0x65, 0x65, 
+    0x15, 0xD4, 0x37, 0xD2, 0xBD, 0xA3, 0x3B, 0xCE,
+    0xC0, 0x01, 0xC6, 0x7F, 0xFD, 0xE1, 0x5B, 0xA8
+};
+
+// From Skein reference document "The Skein Hash Function Family, Version 1.3 - 
+// 1 Oct 2010" (skein1.3.pdf), Appendix C Test Vectors, C.3 pages 74-75. 
+u8
+Skein_1024_1024_Test_Vector_2_Message_Data[] =
+{
+    0xFF, 0xFE, 0xFD, 0xFC, 0xFB, 0xFA, 0xF9, 0xF8, 
+    0xF7, 0xF6, 0xF5, 0xF4, 0xF3, 0xF2, 0xF1, 0xF0, 
+    0xEF, 0xEE, 0xED, 0xEC, 0xEB, 0xEA, 0xE9, 0xE8,
+    0xE7, 0xE6, 0xE5, 0xE4, 0xE3, 0xE2, 0xE1, 0xE0, 
+    0xDF, 0xDE, 0xDD, 0xDC, 0xDB, 0xDA, 0xD9, 0xD8,
+    0xD7, 0xD6, 0xD5, 0xD4, 0xD3, 0xD2, 0xD1, 0xD0, 
+    0xCF, 0xCE, 0xCD, 0xCC, 0xCB, 0xCA, 0xC9, 0xC8,
+    0xC7, 0xC6, 0xC5, 0xC4, 0xC3, 0xC2, 0xC1, 0xC0, 
+    0xBF, 0xBE, 0xBD, 0xBC, 0xBB, 0xBA, 0xB9, 0xB8,
+    0xB7, 0xB6, 0xB5, 0xB4, 0xB3, 0xB2, 0xB1, 0xB0, 
+    0xAF, 0xAE, 0xAD, 0xAC, 0xAB, 0xAA, 0xA9, 0xA8,
+    0xA7, 0xA6, 0xA5, 0xA4, 0xA3, 0xA2, 0xA1, 0xA0,
+    0x9F, 0x9E, 0x9D, 0x9C, 0x9B, 0x9A, 0x99, 0x98,
+    0x97, 0x96, 0x95, 0x94, 0x93, 0x92, 0x91, 0x90, 
+    0x8F, 0x8E, 0x8D, 0x8C, 0x8B, 0x8A, 0x89, 0x88,
+    0x87, 0x86, 0x85, 0x84, 0x83, 0x82, 0x81, 0x80   
+};
+
+u8
+Skein_1024_1024_Test_Vector_2_Result[] =
+{
+    0x1F, 0x3E, 0x02, 0xC4, 0x6F, 0xB8, 0x0A, 0x3F,
+    0xCD, 0x2D, 0xFB, 0xBC, 0x7C, 0x17, 0x38, 0x00, 
+    0xB4, 0x0C, 0x60, 0xC2, 0x35, 0x4A, 0xF5, 0x51,
+    0x18, 0x9E, 0xBF, 0x43, 0x3C, 0x3D, 0x85, 0xF9, 
+    0xFF, 0x18, 0x03, 0xE6, 0xD9, 0x20, 0x49, 0x31,
+    0x79, 0xED, 0x7A, 0xE7, 0xFC, 0xE6, 0x9C, 0x35, 
+    0x81, 0xA5, 0xA2, 0xF8, 0x2D, 0x3E, 0x0C, 0x7A,
+    0x29, 0x55, 0x74, 0xD0, 0xCD, 0x7D, 0x21, 0x7C, 
+    0x48, 0x4D, 0x2F, 0x63, 0x13, 0xD5, 0x9A, 0x77,
+    0x18, 0xEA, 0xD0, 0x7D, 0x07, 0x29, 0xC2, 0x48, 
+    0x51, 0xD7, 0xE7, 0xD2, 0x49, 0x1B, 0x90, 0x2D,
+    0x48, 0x91, 0x94, 0xE6, 0xB7, 0xD3, 0x69, 0xDB, 
+    0x0A, 0xB7, 0xAA, 0x10, 0x6F, 0x0E, 0xE0, 0xA3,
+    0x9A, 0x42, 0xEF, 0xC5, 0x4F, 0x18, 0xD9, 0x37,
+    0x76, 0x08, 0x09, 0x85, 0xF9, 0x07, 0x57, 0x4F,
+    0x99, 0x5E, 0xC6, 0xA3, 0x71, 0x53, 0xA5, 0x78
+};
+
+// From Skein reference document "The Skein Hash Function Family, Version 1.3 - 
+// 1 Oct 2010" (skein1.3.pdf), Appendix C Test Vectors, C.3 page 75. 
+u8
+Skein_1024_1024_Test_Vector_3_Message_Data[] =
+{
+    0xFF, 0xFE, 0xFD, 0xFC, 0xFB, 0xFA, 0xF9, 0xF8,
+    0xF7, 0xF6, 0xF5, 0xF4, 0xF3, 0xF2, 0xF1, 0xF0, 
+    0xEF, 0xEE, 0xED, 0xEC, 0xEB, 0xEA, 0xE9, 0xE8,
+    0xE7, 0xE6, 0xE5, 0xE4, 0xE3, 0xE2, 0xE1, 0xE0, 
+    0xDF, 0xDE, 0xDD, 0xDC, 0xDB, 0xDA, 0xD9, 0xD8,
+    0xD7, 0xD6, 0xD5, 0xD4, 0xD3, 0xD2, 0xD1, 0xD0, 
+    0xCF, 0xCE, 0xCD, 0xCC, 0xCB, 0xCA, 0xC9, 0xC8,
+    0xC7, 0xC6, 0xC5, 0xC4, 0xC3, 0xC2, 0xC1, 0xC0, 
+    0xBF, 0xBE, 0xBD, 0xBC, 0xBB, 0xBA, 0xB9, 0xB8,
+    0xB7, 0xB6, 0xB5, 0xB4, 0xB3, 0xB2, 0xB1, 0xB0, 
+    0xAF, 0xAE, 0xAD, 0xAC, 0xAB, 0xAA, 0xA9, 0xA8,
+    0xA7, 0xA6, 0xA5, 0xA4, 0xA3, 0xA2, 0xA1, 0xA0, 
+    0x9F, 0x9E, 0x9D, 0x9C, 0x9B, 0x9A, 0x99, 0x98,
+    0x97, 0x96, 0x95, 0x94, 0x93, 0x92, 0x91, 0x90, 
+    0x8F, 0x8E, 0x8D, 0x8C, 0x8B, 0x8A, 0x89, 0x88,
+    0x87, 0x86, 0x85, 0x84, 0x83, 0x82, 0x81, 0x80, 
+    0x7F, 0x7E, 0x7D, 0x7C, 0x7B, 0x7A, 0x79, 0x78,
+    0x77, 0x76, 0x75, 0x74, 0x73, 0x72, 0x71, 0x70, 
+    0x6F, 0x6E, 0x6D, 0x6C, 0x6B, 0x6A, 0x69, 0x68,
+    0x67, 0x66, 0x65, 0x64, 0x63, 0x62, 0x61, 0x60, 
+    0x5F, 0x5E, 0x5D, 0x5C, 0x5B, 0x5A, 0x59, 0x58,
+    0x57, 0x56, 0x55, 0x54, 0x53, 0x52, 0x51, 0x50, 
+    0x4F, 0x4E, 0x4D, 0x4C, 0x4B, 0x4A, 0x49, 0x48,
+    0x47, 0x46, 0x45, 0x44, 0x43, 0x42, 0x41, 0x40, 
+    0x3F, 0x3E, 0x3D, 0x3C, 0x3B, 0x3A, 0x39, 0x38,
+    0x37, 0x36, 0x35, 0x34, 0x33, 0x32, 0x31, 0x30, 
+    0x2F, 0x2E, 0x2D, 0x2C, 0x2B, 0x2A, 0x29, 0x28,
+    0x27, 0x26, 0x25, 0x24, 0x23, 0x22, 0x21, 0x20, 
+    0x1F, 0x1E, 0x1D, 0x1C, 0x1B, 0x1A, 0x19, 0x18,
+    0x17, 0x16, 0x15, 0x14, 0x13, 0x12, 0x11, 0x10, 
+    0x0F, 0x0E, 0x0D, 0x0C, 0x0B, 0x0A, 0x09, 0x08,
+    0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00 
+};
+
+u8
+Skein_1024_1024_Test_Vector_3_Result[] =
+{
+    0x84, 0x2A, 0x53, 0xC9, 0x9C, 0x12, 0xB0, 0xCF,
+    0x80, 0xCF, 0x69, 0x49, 0x1B, 0xE5, 0xE2, 0xF7, 
+    0x51, 0x5D, 0xE8, 0x73, 0x3B, 0x6E, 0xA9, 0x42,
+    0x2D, 0xFD, 0x67, 0x66, 0x65, 0xB5, 0xFA, 0x42, 
+    0xFF, 0xB3, 0xA9, 0xC4, 0x8C, 0x21, 0x77, 0x77,
+    0x95, 0x08, 0x48, 0xCE, 0xCD, 0xB4, 0x8F, 0x64, 
+    0x0F, 0x81, 0xFB, 0x92, 0xBE, 0xF6, 0xF8, 0x8F,
+    0x7A, 0x85, 0xC1, 0xF7, 0xCD, 0x14, 0x46, 0xC9, 
+    0x16, 0x1C, 0x0A, 0xFE, 0x8F, 0x25, 0xAE, 0x44,
+    0x4F, 0x40, 0xD3, 0x68, 0x00, 0x81, 0xC3, 0x5A, 
+    0xA4, 0x3F, 0x64, 0x0F, 0xD5, 0xFA, 0x3C, 0x3C,
+    0x03, 0x0B, 0xCC, 0x06, 0xAB, 0xAC, 0x01, 0xD0, 
+    0x98, 0xBC, 0xC9, 0x84, 0xEB, 0xD8, 0x32, 0x27,
+    0x12, 0x92, 0x1E, 0x00, 0xB1, 0xBA, 0x07, 0xD6, 
+    0xD0, 0x1F, 0x26, 0x90, 0x70, 0x50, 0x25, 0x5E,
+    0xF2, 0xC8, 0xE2, 0x4F, 0x71, 0x6C, 0x52, 0xA5 
+};
+
 //------------------------------------------------------------------------------
 
 #define HEADERKEY_BIT_COUNT    (64)
@@ -2022,7 +2171,7 @@ typedef struct OT7Context
             // the FillSize field of the OT7 record.
             //
     u8 FillSizeFieldSize;
-            // Size of the FillSize field in bytes, a value from 0 to to 8 which
+            // Size of the FillSize field in bytes, a value from 0 to 8 which
             // depends on the number of fill bytes in the OT7 record.
             //
     u64 FoundKeyID;
@@ -2167,7 +2316,7 @@ typedef struct OT7Context
             // value read from the TextSize field in the OT7 record.
             //
     u8 TextSizeFieldSize;
-            // Size of the TextSize field in bytes, a value from 0 to to 8 which
+            // Size of the TextSize field in bytes, a value from 0 to 8 which
             // depends on the size of the plaintext in the OT7 record.
             //
     Item* TheKeyDefinition;
@@ -2389,7 +2538,6 @@ u32   ReadBytesX( FILEX* F, u8* BufferAddress, u32 NumberOfBytes );
 List* ReadListOfTextLines( s8* AFileName );
 void  ReadKeyMap( s8* AFileName, List* KeyMapStringList );
 s32   ReadTextLine( FILE* AFile, s8* ABuffer, u32 BufferSize );
-u32   ReadU32( FILE* F, u32* Result );
 u32   ReadU64( FILE* F, u64* Result );
 u32   ReportAvailableKeyBytes();
 void  ReverseString( s8* A );
@@ -2405,6 +2553,8 @@ void  Skein1024_Process_Block(
          u32 blkCnt,
          u32 byteCntAdd );
 
+u32   Skein1024_Test();
+u32   Skein1024_TestCase( u8* MessageData, u32 MessageSize, u8* ExpectedResult );
 void  Skein1024_Update( Skein1024Context* ctx, u8* msg, u32 msgByteCnt );
 void  SkipWhiteSpace( s8** Here, s8* AfterBuffer );
 void  SkipWhiteSpaceBackward( s8** Here, s8* BeforeBuffer );
@@ -2422,8 +2572,6 @@ u32   WriteByteX( FILEX* FileHandleX, u8 ByteToWrite );
 u32   WriteBytes( FILE* FileHandle, u8* BufferAddress, u32 AByteCount );
 u32   WriteBytesX( FILEX* FileHandleX, u8* BufferAddress, u32 AByteCount );
 u32   WriteListOfTextLines( s8* AFileName, List* L );
-u32   WriteU32( FILE* F, u32 n );
-u32   WriteU64( FILE* F, u64 n );
 void  XorBytes( u8* From, u8* To, u32 Count );
 void  ZeroBytes( u8* Destination, u32 AByteCount );
 void  ZeroAllNumericParameters();
@@ -2528,13 +2676,27 @@ main( int argc, char* argv[] )
     {
         Result = ReportAvailableKeyBytes();
 
-        // If an error occurred, then return the error code.
+        // If an error occurred, then return the error code, skipping any other 
+        // work requested on the command line.
         if( Result != RESULT_OK )
         {
             goto Exit;
         }      
     }
     
+    // If the hash function should be tested, then do it.
+    if( IsTestingHash.Value )
+    {
+        // Run the Skein hash function test using standard reference data.
+        Result = Skein1024_Test();
+ 
+        // If an error occurred, then return the error code.
+        if( Result != RESULT_OK )
+        {
+            goto Exit;
+        }      
+    }
+     
     // Getting to this point implies success with Result = RESULT_OK (0).
     // Drop through to the common exit sequence also used by error exits.
 
@@ -5172,7 +5334,7 @@ Exit:// Common exit path for success and failure.
 | to the TextBuffer or accounted for as being fill bytes.
 |
 | See also InterleaveTextFillBytes() which is somewhat the reverse of this 
-| this routine.
+| routine.
 |
 | HISTORY: 
 |    16Mar14 From InterleaveTextFillBytes().
@@ -7880,20 +8042,20 @@ Get_u64_LSB_to_MSB( u8* Buffer )
 }
 
 /*------------------------------------------------------------------------------
-| Put_u64_LSB_to_MSB_WithTruncation
+| Get_u64_LSB_to_MSB_WithTruncation
 |-------------------------------------------------------------------------------
 |
 | PURPOSE: To fetch a 64-bit integer from a buffer where it is stored in
-|          LSB-to-MSB order, skipping any bytes known to be zero.
+|          LSB-to-MSB order, skipping any bytes at the end known to be zero.
 |
 | DESCRIPTION: This makes integers for the kind of CPU that is running this 
 | code, unpacking it from a standard byte order used for data interchange. 
-| It also may skip reading bytes known to be zero.
+| It also may skip reading bytes known to be zero at the MSB end.
 |
-| The ByteCount parameter limits the number of bytes read from the buffer to
-| be no more than ByteCount.  
+| The ByteCount parameter limits the number of bytes read from the buffer to be
+| no more than ByteCount.  
 |
-| This a companion routine to Put_u64_LSB_to_MSB_WithTruncation().
+| This is the companion routine to Put_u64_LSB_to_MSB_WithTruncation().
 |
 | HISTORY: 
 |    08Feb14 From Put_u64_LSB_to_MSB_WithTruncation().
@@ -10674,6 +10836,7 @@ OpenKeyFile( s8* KeyFileName )
 |            in quotes. Revised to use ParseWordsOrQuotedPhrase() instead of
 |            ParseWordOrQuotedPhrase() which was clipping multi-word phrases
 |            at the first space.
+|    30Nov14 Added '-testhash' option for hash function test routine.
 ------------------------------------------------------------------------------*/
     // OUT: Result code to be passed back to the calling application, one of the
     //      values with the prefix 'RESULT_...'.
@@ -11549,6 +11712,21 @@ ParseCommandLine(
             continue;
         }
         
+        //----------------------------------------------------------------------
+
+        // If the '-testhash' parameter is found, then enable the hash test.
+        if( IsPrefixForString( "-testhash", argv[i] ) )
+        {
+            // Set a flag to cause the hash function test to be run.
+            IsTestingHash.Value = 1;    
+            
+            // Mark the hash function parameter as has having been specified.
+            IsTestingHash.IsSpecified = 1;
+             
+            // All done with the -testhash parameter.
+            continue;
+        }
+                
         //----------------------------------------------------------------------
 
         // If the '-u' or '-unused' parameter is found and the 
@@ -12999,15 +13177,6 @@ ReadBytes( FILE*  FileHandle,
     // or EOF has occurred.            
     if( Result < NumberOfBytes )
     {
-        // Report the specific error if in verbose mode.
-//        if( IsVerbose.Value )
-//        {
-//            printf( "ERROR: Tried to read %ld bytes, but actually read %ld bytes.\n",
-//                    NumberOfBytes, Result );
-//                    
-//            printf( "errno = %d\n", errno );
-//        }
-
         // Return the error code MAX_VALUE_32BIT (0xFFFFFFFF).
         return( MAX_VALUE_32BIT );
     }
@@ -13327,10 +13496,6 @@ Exit://
 |
 | Returns the address of the list, or 0 if unable to open the file.
 |
-| ASSUMES: 
-|
-|    The list manager has been initialized by calling InitializeListManager().
-|
 | HISTORY: 
 |    24Nov13  
 |    20Jan14 Revised to append items read to an input list. This permits the
@@ -13395,8 +13560,6 @@ ReadKeyMap( s8* AFileName,
 | EXAMPLE:  
 |                  AList = ReadListOfTextLines("MyData.txt");
 | ASSUMES: 
-|
-|    The list manager has been initialized by calling InitializeListManager().
 |
 |    List will be deleted using DeleteListOfDynamicData().
 |
@@ -13629,47 +13792,7 @@ Finish://
     // Return the number of bytes returned.
     return( AByteCount );
 }
-
-/*------------------------------------------------------------------------------
-| ReadU32
-|-------------------------------------------------------------------------------
-|
-| PURPOSE: To read a u32 integer from a file in LSB-first order.
-|
-| DESCRIPTION: 
-|
-| HISTORY: 
-|    22Jan99 From WriteU32().
-|    05Oct05 Revised to return the number of bytes read. Simplified shifting.
-|    03Nov13 Factored out Get_u32_LSB_to_MSB().
-------------------------------------------------------------------------------*/
-    // OUT: Number of bytes read: 4 on success, or 0 on error.
-u32 //      
-ReadU32( FILE* F, u32* Result )
-{
-    u8  b[4];
-    u32 n;
-    u32 BytesRead;
-    
-    // Read four bytes from the file.
-    BytesRead = ReadBytes( F, b, 4 );
-
-    // If the number of bytes read was not 4, then return 0.
-    if( BytesRead != 4 )
-    {
-        return( 0 );
-    }
-    
-    // Unpack the 32-bit integer from the four bytes read from the file.
-    n =  Get_u32_LSB_to_MSB( (u8*) &b[0] );
-     
-    // Return the result.
-    *Result = n;
-
-    // Return the number of bytes read.
-    return( BytesRead );
-}
-
+  
 /*------------------------------------------------------------------------------
 | ReadU64
 |-------------------------------------------------------------------------------
@@ -14374,6 +14497,7 @@ Skein_Put64_LSB_First( u8* dst, u64* src, u32 ByteCount )
 |
 | HISTORY:  
 |    13Feb14 From Skein 1.3 reference implementation with minor edits.
+|    03May14 Simplified parameter logic of Skein_Start_New_Type() macro.
 ------------------------------------------------------------------------------*/
 void
 Skein1024_Final( Skein1024Context* ctx, u8* hashVal )
@@ -14411,7 +14535,7 @@ Skein1024_Final( Skein1024Context* ctx, u8* hashVal )
         // build the counter block.
         Put_u64_LSB_to_MSB( (u64) i, (u8*) &ctx->b[0] );
         
-        Skein_Start_New_Type( ctx, OUT_FINAL );
+        Skein_Start_New_Type( ctx, SKEIN_T1_BLK_TYPE_OUT_FINAL );
         
         // run "counter mode" 
         Skein1024_Process_Block( ctx, ctx->b, 1, sizeof(u64) ); 
@@ -14447,6 +14571,7 @@ Skein1024_Final( Skein1024Context* ctx, u8* hashVal )
 |    13Feb14 From Skein 1.3 reference implementation with minor edits.
 |    28Feb14 Added zeroing the whole context record to begin with. Changed 
 |            memset() calls to ZeroBytes().
+|    03May14 Simplified parameter logic of Skein_Start_New_Type() macro.
 ------------------------------------------------------------------------------*/
 void 
 Skein1024_Init( Skein1024Context* ctx, u32 hashBitLen )
@@ -14463,7 +14588,7 @@ Skein1024_Init( Skein1024Context* ctx, u32 hashBitLen )
     ctx->hashBitLen = hashBitLen; 
     
     // Set tweaks: T0=0; T1=CFG | FINAL.
-    Skein_Start_New_Type( ctx, CFG_FINAL );        
+    Skein_Start_New_Type( ctx, SKEIN_T1_BLK_TYPE_CFG_FINAL );        
 
     // Zero fill the configuration block.
     ZeroBytes( (u8*) &w[0], sizeof(w) );
@@ -14486,7 +14611,7 @@ Skein1024_Init( Skein1024Context* ctx, u32 hashBitLen )
     // The chaining vars ctx->X are now initialized for the given hashBitLen.
     // Set up to process the data message portion of the hash (default).
     // Set tweaks: T0 = 0, T1 = MSG type, bCnt = 0.
-    Skein_Start_New_Type( ctx, MSG );          
+    Skein_Start_New_Type( ctx, SKEIN_T1_BLK_TYPE_MSG );          
 }
 
 /*------------------------------------------------------------------------------
@@ -14544,8 +14669,7 @@ Skein1024_Process_Block(
             // Number of blocks of input data to process.
             //
     u32 byteCntAdd )
-            // Number of bytes to add to the processed length total for each
-            // input block processed.
+            // Size of each input block in bytes. 
 { 
     u32 i,r;
     u64 ts[3];                        // key schedule: tweak.
@@ -14557,8 +14681,8 @@ Skein1024_Process_Block(
     {
         // This implementation only supports 2**64 input bytes.
         
-        // Update the processed length by the increment supplied when this 
-        // routine was called.
+        // Increase the processed length by the size in bytes of one input 
+        // block.
         ctx->T[0] += byteCntAdd;    
 
         // precompute the key schedule for this block.
@@ -14679,6 +14803,172 @@ Skein1024_Process_Block(
 		
         blkPtr += SKEIN1024_BLOCK_BYTES;
     } 
+}
+
+/*------------------------------------------------------------------------------
+| Skein1024_Test
+|-------------------------------------------------------------------------------
+|
+| PURPOSE: To test the Skein hash routines to make sure they conform to the
+|          Skein standard.
+|
+| DESCRIPTION: This routine generates 1024-bit hashs using the Skein hash 
+| function and then compares them to known results. The overall result is a 
+| pass/fail code.
+|
+| Run this routine when porting OT7 to a new compiler to verify that the hash
+| functions are working according to the Skein reference document "The Skein 
+| Hash Function Family, Version 1.3 - 1 Oct 2010" (skein1.3.pdf). 
+|
+| HISTORY: 
+|    30Nov14
+------------------------------------------------------------------------------*/
+    // OUT: Result code equal to RESULT_OK (0) if no error, otherwise an error 
+    //      code.  
+u32 //
+Skein1024_Test()
+{
+    u32 result;
+     
+    // Run the first of three hash test cases. 
+    //
+    // OUT: Result code equal to RESULT_OK (0) if no error, otherwise an error 
+    //      code.  
+    result =
+        Skein1024_TestCase( 
+            (u8*) &Skein_1024_1024_Test_Vector_1_Message_Data, 
+            (u32) sizeof( Skein_1024_1024_Test_Vector_1_Message_Data ), 
+            (u8*) &Skein_1024_1024_Test_Vector_1_Result );
+
+    // Return if the test case failed.
+    if( result )
+    {
+        return( result );
+    }    
+ 
+    //--------------------------------------------------------------------------
+
+    // Run the second hash test case. 
+    //
+    // OUT: Result code equal to RESULT_OK (0) if no error, otherwise an error 
+    //      code.  
+    result =
+        Skein1024_TestCase( 
+            (u8*) &Skein_1024_1024_Test_Vector_2_Message_Data, 
+            (u32) sizeof( Skein_1024_1024_Test_Vector_2_Message_Data ), 
+            (u8*) &Skein_1024_1024_Test_Vector_2_Result );
+
+    // Return if the test case failed.
+    if( result )
+    {
+        return( result );
+    }    
+ 
+    //--------------------------------------------------------------------------
+
+    // Run the third hash test case. 
+    //
+    // OUT: Result code equal to RESULT_OK (0) if no error, otherwise an error 
+    //      code.  
+    result =
+        Skein1024_TestCase( 
+            (u8*) &Skein_1024_1024_Test_Vector_3_Message_Data, 
+            (u32) sizeof( Skein_1024_1024_Test_Vector_3_Message_Data ), 
+            (u8*) &Skein_1024_1024_Test_Vector_3_Result );
+
+    // Return the result of the last test case.
+    return( result );
+}    
+
+/*------------------------------------------------------------------------------
+| Skein1024_TestCase
+|-------------------------------------------------------------------------------
+|
+| PURPOSE: To test the 1024-bit Skein hash algorithm using reference data.
+|
+| DESCRIPTION: This routine generates a 1024-bit hash using the Skein hash 
+| function and then compares it to a known result. The result is a pass/fail
+| code.
+|
+| Run this routine when porting OT7 to a new compiler to verify that the hash
+| function is working according to the reference implementation defined in the
+| Skein reference document "The Skein Hash Function Family, Version 1.3 - 
+| 1 Oct 2010" (skein1.3.pdf). See Appendix C for test vector data that can be
+| used with this routine.  
+|
+| HISTORY: 
+|    30Nov14 From ComputeKeyIDHash128bit().
+------------------------------------------------------------------------------*/
+    // OUT: Result code equal to RESULT_OK (0) if no error, otherwise an error 
+    //      code.  
+u32 //
+Skein1024_TestCase( u8* MessageData, u32 MessageSize, u8* ExpectedResult )
+{
+    u32 i;
+    static u8 Hash1024Buffer[128]; 
+                // Computed 1024-bit hash buffer. 1024-bits is 128 bytes.
+                //
+    static Skein1024Context HashContext;
+                // Static buffers are used in this routine to avoid taking up 
+                // too much stack space.
+   
+    // Initialize the hash context for producing a 1024-bit hash.
+    Skein1024_Init( &HashContext, 1024 );
+    
+    // At this point the chaining variables in the hash context should match
+    // those published on page 72, section B.13 Skein-1024-124.
+    
+    // Compare each of the chaining variables to the published values.
+    for( i = 0; i < SKEIN1024_STATE_WORDS; i++ )
+    {
+        // If any of the chaining variables doesn't match the standard, then
+        // return an error code.
+        if( HashContext.X[i] != Skein_1024_1024_Initial_Chaining_Values[i] )
+        {
+            // Print status message if verbose output is enabled.
+            if( IsVerbose.Value )
+            {
+                printf( "FAIL: Hash function failed initialization test.\n" );
+            }
+
+            return( RESULT_SKEIN_TEST_INITIALIZATION_FAILED );
+        }
+    }
+    
+    // Feed the message data into the hash context.
+    Skein1024_Update( &HashContext, MessageData, MessageSize );
+
+    // Compute the final 1024-bit hash value, putting it into Hash1024Buffer.
+    Skein1024_Final( &HashContext, Hash1024Buffer );
+    
+    // If the computed hash matches the expected hash value, then return
+    // RESULT_OK (0).
+    if( IsMatchingBytes( (u8*) &Hash1024Buffer, ExpectedResult, 128 ) )
+    {
+        // Print status message if verbose output is enabled.
+        if( IsVerbose.Value )
+        {
+            printf( "PASS: Hash function test case produced expected results.\n" );
+            printf( "Final values in hash context:\n" );
+            Skein1024_Print( &HashContext );
+            printf( "\n" );
+        }
+
+        return( RESULT_OK );
+    }
+    else // Otherwise, return an error code.
+    {
+        // Print status message if verbose output is enabled.
+        if( IsVerbose.Value )
+        {
+            printf( "FAIL: Hash function test case produce unexpected results.\n" );
+            printf( "Final values in hash context:\n" );
+            Skein1024_Print( &HashContext );
+            printf( "\n" );
+        }
+
+        return( RESULT_SKEIN_TEST_FINAL_RESULT_IS_INVALID );
+    }
 }
 
 /*------------------------------------------------------------------------------
@@ -15301,19 +15591,6 @@ WriteBytes( FILE* FileHandle,
                     1,
                     AByteCount,
                     FileHandle );
-                    
-        // If the number written differs from the number requested, then report
-        // the error in verbose mode.
-//        if( NumberWritten != AByteCount )
-//        {
-//            if( IsVerbose.Value )
-//            {
-//                printf( "ERROR: Tried to write %ld bytes, but actually wrote %ld bytes.\n",
-//                        AByteCount, NumberWritten );
-//                        
-//                printf( "errno = %d\n", errno );
-//            }
-//        }
     }
     
     // Return the number of bytes written.
@@ -15751,67 +16028,7 @@ WriteListOfTextLines(
     // Successful, return the OK result code.
     return( RESULT_OK );
 }
-
-/*------------------------------------------------------------------------------
-| WriteU32
-|-------------------------------------------------------------------------------
-|
-| PURPOSE: To write a u32 to a file in LSB-to-MSB order.
-|
-| DESCRIPTION: Returns 4 if the number was written without error, or some other
-| number if there was an error.
-|
-| HISTORY: 
-|    22Jan99
-|    05Oct13 Added return value with number of bytes written. Simplified shifts.
-|    03Nov13 Factored out Put_u32_LSB_to_MSB().
-------------------------------------------------------------------------------*/
-    // OUT: Number of bytes written: 4 if OK, or some other value on error.
-u32 //
-WriteU32( FILE* F, u32 n )
-{
-    u8  b[4];
-    u32 BytesWritten;
-    
-    // Put the bytes in LSB-first order.
-    Put_u32_LSB_to_MSB( n, (u8*) &b[0] );
-      
-    // Write the bytes to the file.
-    BytesWritten = WriteBytes( F, b, 4 );
-
-    // Return the number of bytes written.
-    return( BytesWritten );
-}
-
-/*------------------------------------------------------------------------------
-| WriteU64
-|-------------------------------------------------------------------------------
-|
-| PURPOSE: To write a u64 to a file in LSB-to-MSB order.
-|
-| DESCRIPTION: Returns 8 if the integer was written without error, or some other
-| number if there was an error.
-|
-| HISTORY: 
-|    09Nov13 From WriteU32().
-------------------------------------------------------------------------------*/
-    // OUT: Number of bytes written: 8 if OK, or some other value on error.
-u32 //
-WriteU64( FILE* F, u64 n )
-{
-    u8  b[8];
-    u32 BytesWritten;
-    
-    // Put the bytes in LSB-first order.
-    Put_u64_LSB_to_MSB( n, (u8*) &b[0] );
-      
-    // Write the bytes to the file.
-    BytesWritten = WriteBytes( F, b, 8 );
-
-    // Return the number of bytes written.
-    return( BytesWritten );
-}
-
+ 
 /*------------------------------------------------------------------------------
 | XorBytes
 |-------------------------------------------------------------------------------
@@ -16081,7 +16298,7 @@ ZeroAndFreeAllBuffers()
 void
 ZeroFillString( s8* S )
 {
-    // If a valid string address has been given, the zero the string.
+    // If a valid string address has been given, then zero the string.
     if( S )
     {
         // If the current byte of the string is non-zero, then fill it with
