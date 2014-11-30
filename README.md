@@ -26,7 +26,7 @@ Requires:
 November 30, 2014 status - Everything seems to work and the hash function has 
 been validated relative to the reference design. OT7 has been lightly tested on 
 Debian, Mac OSX, and Windows. There are no known bugs but more testing is needed
-to finalize the code. Next up is to do more tesing with a bunch of randomly 
+to finalize the code. Next up is to do more testing with a bunch of randomly 
 generated test files. 
  
 LICENSE: This is public domain software. I am grateful to Edward Snowden for
