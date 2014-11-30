@@ -23,11 +23,11 @@ Requires:
         - C compiler and a command line environment.
         - User-generated random key files.
 
-July 4, 2014 status - Everything seems to work, but the hash function has yet 
-to be validated relative to the reference design. This only has a bearing on
-the password protection layer since the one-time pad encryption part is secure 
-if the key is truly random and secret. OT7 has been lightly tested on Debian,
-Mac OSX, and Windows.
+November 30, 2014 status - Everything seems to work and the hash function has 
+been validated relative to the reference design. OT7 has been lightly tested on 
+Debian, Mac OSX, and Windows. There are no known bugs but more testing is needed
+to finalize the code. Next up is to do more tesing with a bunch of randomly 
+generated test files. 
  
 LICENSE: This is public domain software. I am grateful to Edward Snowden for
 revealing why encryption is necessary. Please consider donating to his defense 
