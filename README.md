@@ -23,9 +23,10 @@ Requires:
         - C compiler and a command line environment.
         - User-generated random key files.
 
-November 30, 2014 status - Everything seems to work and the hash function has 
-been validated relative to the reference design. OT7 has been lightly tested on 
-Debian, Mac OSX, and Windows. There are no known bugs but more testing is needed
+December 27, 2014 status - Just fixed a string length calculation bug, so please 
+upgrade to the latest version. Everything else seems to work and the hash function 
+has been validated relative to the reference design. OT7 has been lightly tested 
+on Debian, Mac OSX, and Windows. There are no known bugs but more testing is needed
 to finalize the code. Next up is to do more testing with a bunch of randomly 
 generated test files. 
  
