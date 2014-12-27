@@ -4,7 +4,7 @@
              -- LIGHTLY TESTED ON DEBIAN, MAC OSX, AND WINDOWS --
    
 --------------------------------------------------------------------------------
-OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                       November 30, 2014
+OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                       December 27, 2014
 --------------------------------------------------------------------------------
 
 PURPOSE: A tool and protocol for one-time pad encryption.
@@ -382,9 +382,9 @@ Here is an example 'key.map' file that you can use as a template for your own:
 //    OT7 record in encrypted form. 
 //
 //    When an OT7 record is decrypted, the KeyIDHash in the OT7 record header  
-//    implies which key definition to used for decryption. This lookup procedure 
-//    can be overridden by specifying that a certain KeyID be used instead with 
-//    the '-KeyID <number>' command line option.
+//    implies which key definition to used for decryption. This look up 
+//    procedure can be overridden by specifying that a certain KeyID be used 
+//    instead with the '-KeyID <number>' command line option.
 //
 //    The parameters of a key definition follows a consistent format:
 //
@@ -477,6 +477,7 @@ KeyID( 143 )
     -ID BM-GtkZoid3xpT4nwxezDfpWtYAfY6vgyHd
       
     // Use the '-erasekey' option if you want to erase key bytes after use.
+    // This option is shown commented out to disable it. Remove '//' to enable.
     // -erasekey
     
     // Use the '-v' option to enable verbose mode which prints status
@@ -1152,7 +1153,7 @@ ParamList IDStrings;
 ParamList KeyFileNames;
     // List of names of one-time pad key files which contain random bytes. 
     // Specified on the command line using the '-keyfile' option, or indirectly 
-    // via a lookup in the 'key.map' file.            
+    // via a look up in the 'key.map' file.            
 
 ParamList KeyMapList;
     // The contents of the key map file as a linked list of text lines. Comments
@@ -1270,65 +1271,248 @@ int Result;
     // result codes in error handling routines.
     //
     // Zero is reserved to mean successful completion. Error numbers start at 
-    // 700 for compatibility with applications that use error codes assigned to 
-    // small numbers. If calling applications see an error code in the 700 
-    // range, then that's a hint that the error code was produced by ot7.
+    // 1 to fit into a byte and avoid collision with the range used by
+    // sysexits.h which starts at 64.
  
 #define RESULT_OK 0 
             // Use 0 for no error result for compatibility with other
             // applications.
                  
-#define RESULT_CANT_CLOSE_ENCRYPTED_FILE               700
-#define RESULT_CANT_CLOSE_FILE                         701
-#define RESULT_CANT_CLOSE_KEY_FILE                     702
-#define RESULT_CANT_CLOSE_PLAINTEXT_FILE               703
-#define RESULT_CANT_IDENTIFY_KEYADDRESS_FOR_DECRYPTION 704
-#define RESULT_CANT_IDENTIFY_KEYID_FOR_DECRYPTION      705
-#define RESULT_CANT_IDENTIFY_KEYID_FOR_ENCRYPTION      706
-#define RESULT_CANT_OPEN_ENCRYPTED_FILE_FOR_READING    707
-#define RESULT_CANT_OPEN_ENCRYPTED_FILE_FOR_WRITING    708
-#define RESULT_CANT_OPEN_FILE_FOR_WRITING              709
-#define RESULT_CANT_OPEN_KEY_FILE_FOR_READING          710
-#define RESULT_CANT_OPEN_KEY_FILE_FOR_WRITING          711
-#define RESULT_CANT_OPEN_PLAINTEXT_FILE_FOR_READING    712
-#define RESULT_CANT_OPEN_PLAINTEXT_FILE_FOR_WRITING    713
-#define RESULT_CANT_READ_ENCRYPTED_FILE                714
-#define RESULT_CANT_READ_KEY_FILE                      715
-#define RESULT_CANT_READ_KEY_MAP_FILE                  716
-#define RESULT_CANT_READ_PLAINTEXT_FILE                717
-#define RESULT_CANT_SEEK_IN_ENCRYPTED_FILE             718
-#define RESULT_CANT_SEEK_IN_KEY_FILE                   719
-#define RESULT_CANT_SEEK_IN_PLAINTEXT_FILE             720
-#define RESULT_CANT_WRITE_ENCRYPTED_FILE               721
-#define RESULT_CANT_WRITE_FILE                         722
-#define RESULT_CANT_WRITE_KEY_FILE                     723
-#define RESULT_CANT_WRITE_PLAINTEXT_FILE               724
-#define RESULT_CANT_ERASE_USED_KEY_BYTES               725
-#define RESULT_INVALID_CHECKSUM_DECRYPTED              726
-#define RESULT_INVALID_COMMAND_LINE_PARAMETER          727
-#define RESULT_INVALID_COMPUTED_HEADER_KEY             728
-#define RESULT_INVALID_DECRYPTION_OUTPUT               729
-#define RESULT_INVALID_ENCRYPTED_FILE_FORMAT           730
-#define RESULT_INVALID_KEY_FILE_NAME                   731
-#define RESULT_INVALID_KEY_FILE_POINTER                732
-#define RESULT_INVALID_KEY_MAP_FILE_NAME               733
-#define RESULT_INVALID_LOG_FILE_NAME                   734
-#define RESULT_INVALID_NAME_OF_FILE_TO_DECRYPT         735
-#define RESULT_INVALID_NAME_OF_PLAINTEXT_FILE          736
-#define RESULT_INVALID_OUTPUT_FILE_NAME                737
-#define RESULT_KEY_FILE_IS_TOO_SMALL                   738
-#define RESULT_MISSING_COMMAND_LINE_PARAMETER          739
-#define RESULT_MISSING_KEYID_IN_KEYDEF_STRING          740
-#define RESULT_NO_COMMAND_LINE_PARAMETERS_GIVEN        741
-#define RESULT_OUT_OF_MEMORY                           742
-#define RESULT_RAN_OUT_OF_KEY_IN_ONE_TIME_PAD          743
-#define RESULT_SKEIN_TEST_FINAL_RESULT_IS_INVALID      744
-#define RESULT_SKEIN_TEST_INITIALIZATION_FAILED        745
-#define RESULT_TEXT_LINE_TOO_LONG_FOR_BUFFER           746
+#define RESULT_CANT_CLOSE_ENCRYPTED_FILE               1
+#define RESULT_CANT_CLOSE_FILE                         2
+#define RESULT_CANT_CLOSE_KEY_FILE                     3
+#define RESULT_CANT_CLOSE_PLAINTEXT_FILE               4
+#define RESULT_CANT_IDENTIFY_KEYADDRESS_FOR_DECRYPTION 5
+#define RESULT_CANT_IDENTIFY_KEYID_FOR_DECRYPTION      6
+#define RESULT_CANT_IDENTIFY_KEYID_FOR_ENCRYPTION      7
+#define RESULT_CANT_OPEN_ENCRYPTED_FILE_FOR_READING    8
+#define RESULT_CANT_OPEN_ENCRYPTED_FILE_FOR_WRITING    9
+#define RESULT_CANT_OPEN_FILE_FOR_WRITING              10
+#define RESULT_CANT_OPEN_KEY_FILE_FOR_READING          11
+#define RESULT_CANT_OPEN_KEY_FILE_FOR_WRITING          12
+#define RESULT_CANT_OPEN_PLAINTEXT_FILE_FOR_READING    13
+#define RESULT_CANT_OPEN_PLAINTEXT_FILE_FOR_WRITING    14
+#define RESULT_CANT_READ_ENCRYPTED_FILE                15
+#define RESULT_CANT_READ_KEY_FILE                      16
+#define RESULT_CANT_READ_KEY_MAP_FILE                  17
+#define RESULT_CANT_READ_PLAINTEXT_FILE                18
+#define RESULT_CANT_SEEK_IN_ENCRYPTED_FILE             19
+#define RESULT_CANT_SEEK_IN_KEY_FILE                   20
+#define RESULT_CANT_SEEK_IN_PLAINTEXT_FILE             21
+#define RESULT_CANT_WRITE_ENCRYPTED_FILE               22
+#define RESULT_CANT_WRITE_FILE                         23
+#define RESULT_CANT_WRITE_KEY_FILE                     24
+#define RESULT_CANT_WRITE_PLAINTEXT_FILE               25
+#define RESULT_CANT_ERASE_USED_KEY_BYTES               26
+#define RESULT_INVALID_CHECKSUM_DECRYPTED              27
+#define RESULT_INVALID_COMMAND_LINE_PARAMETER          28
+#define RESULT_INVALID_COMPUTED_HEADER_KEY             29
+#define RESULT_INVALID_DECRYPTION_OUTPUT               30
+#define RESULT_INVALID_ENCRYPTED_FILE_FORMAT           31
+#define RESULT_INVALID_KEY_FILE_NAME                   32
+#define RESULT_INVALID_KEY_FILE_POINTER                33
+#define RESULT_INVALID_KEY_MAP_FILE_NAME               34
+#define RESULT_INVALID_LOG_FILE_NAME                   35
+#define RESULT_INVALID_NAME_OF_FILE_TO_DECRYPT         36
+#define RESULT_INVALID_NAME_OF_PLAINTEXT_FILE          37
+#define RESULT_INVALID_OUTPUT_FILE_NAME                38
+#define RESULT_KEY_FILE_IS_TOO_SMALL                   39
+#define RESULT_MISSING_COMMAND_LINE_PARAMETER          40
+#define RESULT_MISSING_KEYID_IN_KEYDEF_STRING          41
+#define RESULT_NO_COMMAND_LINE_PARAMETERS_GIVEN        42
+#define RESULT_OUT_OF_MEMORY                           43
+#define RESULT_RAN_OUT_OF_KEY_IN_ONE_TIME_PAD          44
+#define RESULT_SKEIN_TEST_FINAL_RESULT_IS_INVALID      45
+#define RESULT_SKEIN_TEST_INITIALIZATION_FAILED        46
+#define RESULT_TEXT_LINE_TOO_LONG_FOR_BUFFER           47
+
+/*------------------------------------------------------------------------------
+| ResultCodeAndString
+|-------------------------------------------------------------------------------
+|
+| PURPOSE: To associate a result code with a name string.
+|
+| DESCRIPTION: 
+|
+| HISTORY: 
+|    25Dec14
+------------------------------------------------------------------------------*/
+typedef struct
+{
+    int ResultCode;   
+            // A result code.
+ 
+    s8* ResultCodeString;    
+            // The name of the result code an ASCIIZ string.
+            
+} ResultCodeAndString;
+  
+/*------------------------------------------------------------------------------
+| ResultCodesOT7
+|-------------------------------------------------------------------------------
+|
+| PURPOSE: To associate OT7 result codes with name strings.
+|
+| DESCRIPTION: OT7 passes a result code to the calling application or shell 
+| when it exits. This table is used to convert that number to a human readable
+| string.
+|
+| HISTORY: 
+|    25Dec14
+------------------------------------------------------------------------------*/
+ResultCodeAndString
+ResultCodesOT7[] =
+{
+    { RESULT_OK, 
+     "RESULT_OK" },
+     
+    { RESULT_CANT_CLOSE_ENCRYPTED_FILE, 
+     "RESULT_CANT_CLOSE_ENCRYPTED_FILE" },
+     
+    { RESULT_CANT_CLOSE_FILE, 
+     "RESULT_CANT_CLOSE_FILE" }, 
+                             
+    { RESULT_CANT_CLOSE_KEY_FILE, 
+     "RESULT_CANT_CLOSE_KEY_FILE" },
+     
+    { RESULT_CANT_CLOSE_PLAINTEXT_FILE, 
+     "RESULT_CANT_CLOSE_PLAINTEXT_FILE" }, 
+       
+    { RESULT_CANT_IDENTIFY_KEYADDRESS_FOR_DECRYPTION, 
+     "RESULT_CANT_IDENTIFY_KEYADDRESS_FOR_DECRYPTION" },
+     
+    { RESULT_CANT_IDENTIFY_KEYID_FOR_DECRYPTION, 
+     "RESULT_CANT_IDENTIFY_KEYID_FOR_DECRYPTION" }, 
+     
+    { RESULT_CANT_IDENTIFY_KEYID_FOR_ENCRYPTION, 
+     "RESULT_CANT_IDENTIFY_KEYID_FOR_ENCRYPTION" },  
+         
+    { RESULT_CANT_OPEN_ENCRYPTED_FILE_FOR_READING, 
+     "RESULT_CANT_OPEN_ENCRYPTED_FILE_FOR_READING" },  
+       
+    { RESULT_CANT_OPEN_ENCRYPTED_FILE_FOR_WRITING, 
+     "RESULT_CANT_OPEN_ENCRYPTED_FILE_FOR_WRITING" },  
+       
+    { RESULT_CANT_OPEN_FILE_FOR_WRITING, 
+     "RESULT_CANT_OPEN_FILE_FOR_WRITING" },
+      
+    { RESULT_CANT_OPEN_KEY_FILE_FOR_READING, 
+     "RESULT_CANT_OPEN_KEY_FILE_FOR_READING" },
+      
+    { RESULT_CANT_OPEN_KEY_FILE_FOR_WRITING, 
+     "RESULT_CANT_OPEN_KEY_FILE_FOR_WRITING" },
+              
+    { RESULT_CANT_OPEN_PLAINTEXT_FILE_FOR_READING, 
+     "RESULT_CANT_OPEN_PLAINTEXT_FILE_FOR_READING" },
+     
+    { RESULT_CANT_OPEN_PLAINTEXT_FILE_FOR_WRITING, 
+     "RESULT_CANT_OPEN_PLAINTEXT_FILE_FOR_WRITING" },
+     
+    { RESULT_CANT_READ_ENCRYPTED_FILE, 
+     "RESULT_CANT_READ_ENCRYPTED_FILE" },   
+     
+    { RESULT_CANT_READ_KEY_FILE, 
+     "RESULT_CANT_READ_KEY_FILE" },
+                           
+    { RESULT_CANT_READ_KEY_MAP_FILE, 
+     "RESULT_CANT_READ_KEY_MAP_FILE" },
+       
+    { RESULT_CANT_READ_PLAINTEXT_FILE, 
+     "RESULT_CANT_READ_PLAINTEXT_FILE" }, 
+     
+    { RESULT_CANT_SEEK_IN_ENCRYPTED_FILE, 
+     "RESULT_CANT_SEEK_IN_ENCRYPTED_FILE" }, 
+      
+    { RESULT_CANT_SEEK_IN_KEY_FILE, 
+     "RESULT_CANT_SEEK_IN_KEY_FILE" },
+          
+    { RESULT_CANT_SEEK_IN_PLAINTEXT_FILE,
+     "RESULT_CANT_SEEK_IN_PLAINTEXT_FILE" },  
+     
+    { RESULT_CANT_WRITE_ENCRYPTED_FILE,
+     "RESULT_CANT_WRITE_ENCRYPTED_FILE" },   
+     
+    { RESULT_CANT_WRITE_FILE,
+     "RESULT_CANT_WRITE_FILE" },  
+     
+    { RESULT_CANT_WRITE_KEY_FILE,
+     "RESULT_CANT_WRITE_KEY_FILE" },    
+     
+    { RESULT_CANT_WRITE_PLAINTEXT_FILE,
+     "RESULT_CANT_WRITE_PLAINTEXT_FILE" },     
+     
+    { RESULT_CANT_ERASE_USED_KEY_BYTES,
+     "RESULT_CANT_ERASE_USED_KEY_BYTES" }, 
+     
+    { RESULT_INVALID_CHECKSUM_DECRYPTED,
+     "RESULT_INVALID_CHECKSUM_DECRYPTED" }, 
+     
+    { RESULT_INVALID_COMMAND_LINE_PARAMETER,
+     "RESULT_INVALID_COMMAND_LINE_PARAMETER" }, 
+     
+    { RESULT_INVALID_COMPUTED_HEADER_KEY,
+     "RESULT_INVALID_COMPUTED_HEADER_KEY" },   
+     
+    { RESULT_INVALID_DECRYPTION_OUTPUT,
+     "RESULT_INVALID_DECRYPTION_OUTPUT" },   
+     
+    { RESULT_INVALID_ENCRYPTED_FILE_FORMAT,
+     "RESULT_INVALID_ENCRYPTED_FILE_FORMAT" },      
+     
+    { RESULT_INVALID_KEY_FILE_NAME,
+     "RESULT_INVALID_KEY_FILE_NAME" },  
+     
+    { RESULT_INVALID_KEY_FILE_POINTER,
+     "RESULT_INVALID_KEY_FILE_POINTER" }, 
+     
+    { RESULT_INVALID_KEY_MAP_FILE_NAME,
+     "RESULT_INVALID_KEY_MAP_FILE_NAME" }, 
+     
+    { RESULT_INVALID_LOG_FILE_NAME,
+     "RESULT_INVALID_LOG_FILE_NAME" },  
+     
+    { RESULT_INVALID_NAME_OF_FILE_TO_DECRYPT,
+     "RESULT_INVALID_NAME_OF_FILE_TO_DECRYPT" }, 
+     
+    { RESULT_INVALID_NAME_OF_PLAINTEXT_FILE,
+     "RESULT_INVALID_NAME_OF_PLAINTEXT_FILE" }, 
+     
+    { RESULT_INVALID_OUTPUT_FILE_NAME,
+     "RESULT_INVALID_OUTPUT_FILE_NAME" }, 
+     
+    { RESULT_KEY_FILE_IS_TOO_SMALL,
+     "RESULT_KEY_FILE_IS_TOO_SMALL" }, 
+     
+    { RESULT_MISSING_COMMAND_LINE_PARAMETER,
+     "RESULT_MISSING_COMMAND_LINE_PARAMETER" }, 
+     
+    { RESULT_MISSING_KEYID_IN_KEYDEF_STRING,
+     "RESULT_MISSING_KEYID_IN_KEYDEF_STRING" }, 
+     
+    { RESULT_NO_COMMAND_LINE_PARAMETERS_GIVEN,
+     "RESULT_NO_COMMAND_LINE_PARAMETERS_GIVEN" },  
+     
+    { RESULT_OUT_OF_MEMORY,
+     "RESULT_OUT_OF_MEMORY" },  
+     
+    { RESULT_RAN_OUT_OF_KEY_IN_ONE_TIME_PAD,
+     "RESULT_RAN_OUT_OF_KEY_IN_ONE_TIME_PAD" }, 
+     
+    { RESULT_SKEIN_TEST_FINAL_RESULT_IS_INVALID,
+     "RESULT_SKEIN_TEST_FINAL_RESULT_IS_INVALID" }, 
+     
+    { RESULT_SKEIN_TEST_INITIALIZATION_FAILED,
+     "RESULT_SKEIN_TEST_INITIALIZATION_FAILED" }, 
+     
+    { RESULT_TEXT_LINE_TOO_LONG_FOR_BUFFER,
+     "RESULT_TEXT_LINE_TOO_LONG_FOR_BUFFER" }, 
+     
+    { 0, 0 } // This record marks the end of the list.
+};
      
 //------------------------------------------------------------------------------
  
-#define OT7_VERSION_STRING "OT7 -- One-Time Pad Encryption Tool v6"
+#define OT7_VERSION_STRING "OT7 -- One-Time Pad Encryption Tool v7"
             // Version identifier for this application.
 
 // This usage info is printed to standard output for the '-h' command. 
@@ -1548,9 +1732,9 @@ Help[] =
 "//    record.", 
 "//",
 "//    When an OT7 record is decrypted, the KeyIDHash in the OT7 record header",  
-"//    implies which key definition to used for decryption. This lookup procedure", 
-"//    can be overridden by specifying that a certain KeyID be used instead with", 
-"//    the '-KeyID <number>' command line option.",
+"//    implies which key definition to used for decryption. This look up", 
+"//    procedure can be overridden by specifying that a certain KeyID be used", 
+"//    instead with the '-KeyID <number>' command line option.",
 "//",
 "//    The parameters of a key definition follows a consistent format:",
 "//",
@@ -1643,6 +1827,7 @@ Help[] =
 "    -ID BM-GtkZoid3xpT4nwxezDfpWtYAfY6vgyHd",
 "",
 "    // Use the '-erasekey' option if you want to erase key bytes after use.",
+"    // This option is shown commented out to disable it. Remove '//' to enable.",
 "    // -erasekey",
 "",
 "    // Use the '-v' option to enable verbose mode which prints status",
@@ -1676,7 +1861,7 @@ Help[] =
     0    
 };
 
-// base64 lookup table for converting 6-bit words into ASCII. From RFC4648.
+// base64 look up table for converting 6-bit words into ASCII. From RFC4648.
 s8
 base64Alphabet[64] =
 {
@@ -1707,11 +1892,11 @@ base64Alphabet[64] =
             // inserting a CRLF end-of-line sequence. 76 is the RFC 2045 line 
             // length limit.
 
-// Convert a 4-bit word to an ASCII hex value using this lookup table.
+// Convert a 4-bit word to an ASCII hex value using this look up table.
 u8  HexDigit[] = { '0','1','2','3','4','5','6','7',
                    '8','9','A','B','C','D','E','F' };
 
-// Convert an ASCII hex value to a 4-bit word using this lookup table.
+// Convert an ASCII hex value to a 4-bit word using this look up table.
 //
 // Subtract '0' from an ASCII hex digit and then use the result as an index 
 // into this table to convert an ASCII hex digit to binary, like this:
@@ -2376,8 +2561,7 @@ s8*  ConvertBytesToHexString( u8* Buffer, u32 ByteCount );
 
 s8*  ConvertIntegerToString64( u64 n );
 void CopyBytes( u8* From, u8* To, u32 Count );
-u32  CountString( s8* FirstByte );
-
+ 
 u32  DecryptFileOT7();
 
 u32  DecryptFileToBuffer( 
@@ -2453,16 +2637,16 @@ u32   IsMatchingBytes( u8* A, u8* B, u32 Count );
 u32   IsMatchingStrings( s8* A, s8* B );
 u32   IsPrefixForString( s8* Prefix, s8* OtherString );
  
-Item* LookupKeyDefinitionByIDStrings( 
+Item* LookUpKeyDefinitionByIDStrings( 
             List* KeyMapList, 
             List* IDStringsList,
             u64*  FoundKeyID );
 
-Item* LookupKeyDefinitionByKeyID( 
+Item* LookUpKeyDefinitionByKeyID( 
             List* KeyMapList, 
             u64   KeyID );
             
-void LookupKeyDefinitionByOT7Header( 
+void LookUpKeyDefinitionByOT7Header( 
             List*  KeyMapList, 
             s8*    PasswordForSearching,
             u8*    OT7HeaderToMatch,
@@ -2471,7 +2655,9 @@ void LookupKeyDefinitionByOT7Header(
             s8**   FoundPassword,
             u64*   KeyAddress );
             
-u64 LookupOffsetOfFirstUnusedKeyByte( s8* KeyHashString );
+s8* LookUpResultCodeString( int ResultCode );
+            
+u64 LookUpOffsetOfFirstUnusedKeyByte( s8* KeyHashString );
 
 int main( int argc, char* argv[] );
 
@@ -2526,6 +2712,13 @@ void  PickKeyID(
             u64    LastKeyID );
         
 void  PrintStringList( s8** AStringList );
+
+void  PrintStringWithLineWrap( 
+            s8* PrefixString,
+            s8* MiddleString, 
+            s8* SuffixString, 
+            u32 LineLength );
+
 void  Put_u16_LSB_to_MSB( u16 n, u8* Buffer );
 void  Put_u32_LSB_to_MSB( u32 n, u8* Buffer );
 void  Put_u64_LSB_to_MSB( u64 n, u8* Buffer );
@@ -2606,6 +2799,7 @@ void  ZeroFillStringList( List* L );
 |    23Feb14 Made decryption the default operation if no other operation is
 |            selected.
 |    01Mar14 Reverted to printing help message if no operation is selected.
+|    26Dec14 Added LookUpResultCodeString().
 ------------------------------------------------------------------------------*/
     // OUT: Result code from interpreting the command line function.
 int //
@@ -2689,6 +2883,22 @@ main( int argc, char* argv[] )
     {
         // Run the Skein hash function test using standard reference data.
         Result = Skein1024_Test();
+        
+        // If verbose mode is enabled, then print the result of the hash
+        // function test.
+        if( IsVerbose.Value )
+        {
+            // If all the hash function test cases passed, then report that.
+            if( Result == RESULT_OK )
+            {
+                printf( "PASS: All hash function tests passed OK.\n" );
+            }   
+            else // At least one of the hash function test cases failed.
+            {
+                printf( "FAIL: A hash function test produced invalid results.\n" );
+                printf( "      DO NOT USE OT7 TILL THIS IS FIXED.\n" );
+            }   
+        }
  
         // If an error occurred, then return the error code.
         if( Result != RESULT_OK )
@@ -2725,7 +2935,9 @@ Exit://
     {
         printf( "All working buffers have been cleared.\n" );
          
-        printf( "Exiting OT7 with result code %d.\n", Result );
+        printf( "Exiting OT7 with result code %d = %s.\n", 
+                Result,
+                LookUpResultCodeString( Result ) );
         
         // Print a dividing line between OT7 sessions in verbose mode to make 
         // reading log files easier.
@@ -2734,7 +2946,7 @@ Exit://
     }
  
     // Return result code to the calling application.
-    return( Result );
+    exit( Result );
 }
 
 /*------------------------------------------------------------------------------
@@ -3449,7 +3661,7 @@ ComputeKeyIDHash128bit(
             
     // Feed the password into the hash context.
     Skein1024_Update( 
-        &KeyIDHash128bitContext, (u8*) Password, CountString(Password) );
+        &KeyIDHash128bitContext, (u8*) Password, strlen(Password) );
           
     // Compute the KeyIDHash128bit value and put it into the output buffer.
     Skein1024_Final( &KeyIDHash128bitContext, KeyIDHash128bit );
@@ -3680,57 +3892,7 @@ CopyBytes( u8* From, u8* To, u32 Count )
         }
     }
 }
-
-/*------------------------------------------------------------------------------
-| CountString
-|-------------------------------------------------------------------------------
-|
-| PURPOSE: To count the data bytes in a 0-terminated string. 
-|
-| DESCRIPTION: The terminating 0 is not included in the count.
-|
-| EXAMPLE:            AByteCount = CountString( MyString );
-|
-| HISTORY: 
-|    31Aug89 
-|    15Feb93 changed to return u32 instead of u16.
-|    01Jan96 chaged to use pointer instead of indexed array.
-|    01Dec13 Improved efficiency.
-|    01Feb14 Now returns zero if string address is zero.
-------------------------------------------------------------------------------*/
-    // OUT: Number of bytes in the string, not counting the zero at the end.
-u32 //
-CountString( s8* FirstByte )
-{
-    s8* End;
-    
-    // If the string address is invalid, then return zero as the string length.
-    if( FirstByte == 0 )
-    {
-        return( 0 );
-    }
-
-    // Initialize byte cursor End to point to the first byte of the string.
-    End = FirstByte;
-
-///////////
-NextByte://
-///////////
-
-    // If the current byte is non-zero, then advance the cursor by one byte.
-    if( *End++ )
-    {
-        // Go test the next byte.
-        goto NextByte;
-    }
-    
-    // At this point End refers to the zero-terminator byte.
   
-    // Subtract the starting address from the ending address, and return the
-    // number of bytes in the string, not including the zero at the end.
-    return( (u32) (End - FirstByte) );
-}
-
 /*------------------------------------------------------------------------------
 | DecryptFileToBuffer
 |-------------------------------------------------------------------------------
@@ -5427,7 +5589,7 @@ DeleteEmptyStringsInStringList( List* L ) // A list of strings.
         // If the current item refers to an empty string, then extract the
         // item from the list and delete it, also deallocating the string
         // buffer.
-        if( CountString( (s8*) C.TheItem->DataAddress ) == 0 )
+        if( strlen( (s8*) C.TheItem->DataAddress ) == 0 )
         {
             // Track the next item.
             Next = C.TheItem->NextItem;
@@ -6434,7 +6596,7 @@ EncryptFileUsingKeyFile( OT7Context* e )
     //      the 'ot7.log' file after encryption, then the whole encryption 
     //      process will fail to avoid accidental reuse of key bytes.
     e->StartingAddress = 
-        LookupOffsetOfFirstUnusedKeyByte( (s8*) &e->KeyHashStringBuffer[0] );
+        LookUpOffsetOfFirstUnusedKeyByte( (s8*) &e->KeyHashStringBuffer[0] );
                                                     // A hash string that 
                                                     // identifies the 
                                                     // one-time pad key file.
@@ -6539,7 +6701,7 @@ EncryptFileUsingKeyFile( OT7Context* e )
 
         // Calculate the length of the file name not including a zero 
         // terminator byte.
-        e->FileNameSize = CountString( NameOfPlaintextFile.Value );
+        e->FileNameSize = strlen( NameOfPlaintextFile.Value );
     }
         
     //--------------------------------------------------------------------------
@@ -6715,8 +6877,7 @@ EncryptFileUsingKeyFile( OT7Context* e )
     // context.
     
     // Use at least one true random key byte for each byte of the password.
-    e->TrueRandomBytesRequiredForHashInitialization = 
-        CountString( Password.Value );
+    e->TrueRandomBytesRequiredForHashInitialization = strlen( Password.Value );
         
     // Use a minimum of MIN_TRUE_RANDOM_BYTES_FOR_HASH_INIT bytes to cover the
     // case where a short password is used.
@@ -8285,7 +8446,7 @@ IdentifyDecryptionKey( OT7Context* d )
         {
             // Find the key definition given the KeyID.
             d->TheKeyDefinition = 
-                LookupKeyDefinitionByKeyID( 
+                LookUpKeyDefinitionByKeyID( 
                     KeyMapList.Value, 
                     KeyID.Value );
         }
@@ -8320,7 +8481,7 @@ IdentifyDecryptionKey( OT7Context* d )
              
             // Find a key definition in a key map given the header of an OT7 
             // record and an optional password.
-            LookupKeyDefinitionByOT7Header( 
+            LookUpKeyDefinitionByOT7Header( 
                 KeyMapList.Value, 
                     // A list of text strings read from a 'key.map' file. 
                     //
@@ -8374,7 +8535,7 @@ IdentifyDecryptionKey( OT7Context* d )
                 DeleteString( Password.Value );
                 
                 // Link the Password parameter to the password located by the
-                // lookup routine.
+                // look up routine.
                 Password.Value = d->FoundPassword;
                 
                 // Now mark the found password address as zero since the 
@@ -8613,7 +8774,7 @@ IdentifyEncryptionKey( OT7Context* C )
                 // such as "KeyID( 1844 )" where the number identifies the key 
                 // definition. 
                 C->TheKeyDefinition = 
-                    LookupKeyDefinitionByKeyID( KeyMapList.Value, KeyID.Value );
+                    LookUpKeyDefinitionByKeyID( KeyMapList.Value, KeyID.Value );
                         
                 // If a key definition was found, then skip other ways to locate
                 // a key definition.
@@ -8626,7 +8787,7 @@ IdentifyEncryptionKey( OT7Context* C )
                                  ConvertIntegerToString64(KeyID.Value) );
                     }
 
-                    goto AfterKeyDefinitionLookup;
+                    goto AfterKeyDefinitionLookUp;
                 }
             }
             
@@ -8640,7 +8801,7 @@ IdentifyEncryptionKey( OT7Context* C )
                 // primary identifier for the key definition. Returns the KeyID  
                 // in FoundKeyID. 
                 C->TheKeyDefinition = 
-                    LookupKeyDefinitionByIDStrings( 
+                    LookUpKeyDefinitionByIDStrings( 
                         KeyMapList.Value, 
                         IDStrings.Value,
                         &C->FoundKeyID );
@@ -8669,7 +8830,7 @@ IdentifyEncryptionKey( OT7Context* C )
                                  ConvertIntegerToString64(KeyID.Value) );
                     }
                    
-                    goto AfterKeyDefinitionLookup;
+                    goto AfterKeyDefinitionLookUp;
                 }
             }
             
@@ -8691,7 +8852,7 @@ IdentifyEncryptionKey( OT7Context* C )
     //--------------------------------------------------------------------------
          
 ///////////////////////////    
-AfterKeyDefinitionLookup://
+AfterKeyDefinitionLookUp://
 ///////////////////////////    
             
     // If a key definition was found, then use it to augment the command line
@@ -8874,7 +9035,7 @@ InitializeHashWithTrueRandomBytesAndPassword(
     
     // Measure the length of the password string, not counting the terminal
     // zero.
-    PasswordBytesToHash = CountString( Password );
+    PasswordBytesToHash = strlen( Password );
     
     // Use at least one true random key byte for each byte of the password to
     // avoid leaking password information.
@@ -9530,7 +9691,7 @@ IsPrefixForString( s8* Prefix, s8* OtherString )
 }
 
 /*------------------------------------------------------------------------------
-| LookupKeyDefinitionByIDStrings
+| LookUpKeyDefinitionByIDStrings
 |-------------------------------------------------------------------------------
 |
 | PURPOSE: To find a key definition in a key map given one or more identifiers 
@@ -9564,13 +9725,13 @@ IsPrefixForString( s8* Prefix, s8* OtherString )
 |     '123' is the KeyID number of the key definition.
 |
 | HISTORY: 
-|    18Jan14 From LookupKeyDefinitionByKeyID().
+|    18Jan14 From LookUpKeyDefinitionByKeyID().
 ------------------------------------------------------------------------------*/
       // OUT: Either a reference to a text line matching the key definition, or 
       // 0 if no match was found. If a match is found, then the KeyID is   
       // is returned in FoundKeyID.
 Item* //
-LookupKeyDefinitionByIDStrings( 
+LookUpKeyDefinitionByIDStrings( 
     List* KeyMapList, 
              // A list of text strings read from a 'key.map' file. This list has
              // been preprocessed to strip out comments and any whitespace at 
@@ -9707,7 +9868,7 @@ LookupKeyDefinitionByIDStrings(
 }              
 
 /*------------------------------------------------------------------------------
-| LookupKeyDefinitionByKeyID
+| LookUpKeyDefinitionByKeyID
 |-------------------------------------------------------------------------------
 |
 | PURPOSE: To use a KeyID to find a key definition in a key map.  
@@ -9743,7 +9904,7 @@ LookupKeyDefinitionByIDStrings(
       // OUT: Either a reference to a text line matching the key definition, or 
       // 0 if no match was found.  
 Item* //
-LookupKeyDefinitionByKeyID( 
+LookUpKeyDefinitionByKeyID( 
     List* KeyMapList, 
              // A list of text strings read from a 'key.map' file. This list has
              // been preprocessed to strip out comments and any whitespace at 
@@ -9817,7 +9978,7 @@ NextLine://
 }
               
 /*------------------------------------------------------------------------------
-| LookupKeyDefinitionByOT7Header
+| LookUpKeyDefinitionByOT7Header
 |-------------------------------------------------------------------------------
 |
 | PURPOSE: To find a key definition in a key map given the header of an OT7 
@@ -9857,10 +10018,10 @@ NextLine://
 |          It is optional to assign a password to a key definition.
 |
 | HISTORY: 
-|    18Feb14 From LookupKeyDefinitionByIDStrings().
+|    18Feb14 From LookUpKeyDefinitionByIDStrings().
 ------------------------------------------------------------------------------*/
 void
-LookupKeyDefinitionByOT7Header( 
+LookUpKeyDefinitionByOT7Header( 
     List* KeyMapList, 
             // A list of text strings read from a 'key.map' file. This list has 
             // been preprocessed to strip out comments and any whitespace at 
@@ -10163,7 +10324,46 @@ CleanUp://
 }
 
 /*------------------------------------------------------------------------------
-| LookupOffsetOfFirstUnusedKeyByte
+| LookUpResultCodeString
+|-------------------------------------------------------------------------------
+|
+| PURPOSE: To look up a string for a OT7 result code.
+|
+| DESCRIPTION: OT7 passes a result code to the calling application or shell 
+| when it exits. This routine converts that number to a human readable string.
+|
+| HISTORY: 
+|    26Dec14
+------------------------------------------------------------------------------*/
+    // OUT: Result code string address corresponding to the given result code.
+s8* // 
+LookUpResultCodeString( int ResultCode ) 
+{
+    u32 i;
+     
+    // Start at the beginning of the string table.
+    i = 0;
+    
+    // Keep scanning for a match until the end of the table is reached.
+    while( ResultCodesOT7[i].ResultCodeString )
+    {
+        // If the current entry in the table matches the given result code,
+        // then return the string.
+        if( ResultCodesOT7[i].ResultCode == ResultCode )
+        {
+            return( ResultCodesOT7[i].ResultCodeString );
+        }
+        
+        // Otherwise, advance to the next location in the table.
+        i++;
+    }
+    
+    // No match has been found so return an error notice.
+    return( "Invalid result code" );
+}
+
+/*------------------------------------------------------------------------------
+| LookUpOffsetOfFirstUnusedKeyByte
 |-------------------------------------------------------------------------------
 |
 | PURPOSE: To get the file offset of the first unused key byte in a one-time
@@ -10197,7 +10397,7 @@ CleanUp://
 ------------------------------------------------------------------------------*/
     // OUT: Offset of the first unused key byte in the file.
 u64 //
-LookupOffsetOfFirstUnusedKeyByte( s8* KeyHashString )
+LookUpOffsetOfFirstUnusedKeyByte( s8* KeyHashString )
                                         // A hash string that identifies a 
                                         // one-time pad key file.
  {
@@ -10292,7 +10492,7 @@ LookupOffsetOfFirstUnusedKeyByte( s8* KeyHashString )
             //     2819ED98F3020672 24875
         
             // Get the number of bytes in the string.
-            ByteCount = CountString( (s8*) C.TheItem->DataAddress );    
+            ByteCount = strlen( (s8*) C.TheItem->DataAddress );    
             
             // Calculate the address of the first byte after the string,
             // at the zero-terminator if the string has one.
@@ -11127,7 +11327,7 @@ ParseCommandLine(
                 S = argv[i+1];
                 
                 // Parse the integer from the next parameter string.
-                FillSize.Value = ParseUnsignedInteger( &S, S + CountString(S) );
+                FillSize.Value = ParseUnsignedInteger( &S, S + strlen(S) );
                 
                 // Set a status flag to mean that the number of fill bytes
                 // has been specified on the command line.
@@ -11368,7 +11568,7 @@ ParseCommandLine(
                 S = argv[i+1];
                 
                 // Parse the integer from the next parameter string.
-                KeyID.Value = ParseUnsignedInteger( &S, S + CountString(S) );
+                KeyID.Value = ParseUnsignedInteger( &S, S + strlen(S) );
                 
                 // Set a status flag to mean that the key mask has been 
                 // specified.
@@ -11985,7 +12185,7 @@ CleanUp://
 | use by other crypto routines.
 |
 | HISTORY: 
-|    01Feb14 Factored out of LookupKeyDefinitionByKeyID(). 
+|    01Feb14 Factored out of LookUpKeyDefinitionByKeyID(). 
 |    16Feb14 Revised for hash-based header design.
 ------------------------------------------------------------------------------*/
     // OUT: Result code: RESULT_OK on success, or an error code otherwise.
@@ -12010,7 +12210,7 @@ ParseKeyIDFromKeyDefString(
     //     KeyID( 1844 )
 
     // Get the number of bytes in the string not including the zero teriminator.
-    ByteCount = CountString( KeyDefString );    
+    ByteCount = strlen( KeyDefString );    
             
     // Calculate the address of the first byte after the string, at the 
     // zero-terminator.
@@ -12265,7 +12465,7 @@ ParseWordOrQuotedPhrase(
     
     // Count the number of bytes in the input string, not including the zero
     // byte that marks the end.
-    StringSize = CountString( s );
+    StringSize = strlen( s );
     
     // If the string is empty, then just return zero as the number of bytes
     // parsed.
@@ -12428,7 +12628,7 @@ ParseWordOrQuotedPhrasePreservingQuotes(
     
     // Count the number of bytes in the input string, not including the zero
     // byte that marks the end.
-    StringSize = CountString( s );
+    StringSize = strlen( s );
     
     // If the string is empty, then just return zero as the number of bytes
     // parsed.
@@ -12604,7 +12804,7 @@ ParseWordsOrQuotedPhrase(
     
     // Count the number of bytes in the input string, not including the zero
     // byte that marks the end.
-    StringSize = CountString( s );
+    StringSize = strlen( s );
     
     // If the string is empty, then just return zero as the number of bytes
     // parsed.
@@ -12776,6 +12976,130 @@ PrintStringList( s8** AStringList )
         // Print the string with an end-of-line so that each string is printed
         // on a separate line.
         printf( "%s\n", AString );
+    }
+}
+
+/*------------------------------------------------------------------------------
+| PrintStringWithLineWrap
+|-------------------------------------------------------------------------------
+|
+| PURPOSE: To print a long string with automatic line wrapping.
+|
+| DESCRIPTION: A long string is broken up into a prefix string, a middle string, 
+| and a suffix string for easier handling.
+|
+| This routine expects the screen cursor to be positioned at the start of the
+| line where printing is to begin.
+|
+| EXAMPLE: This function call...
+|
+|       PrintStringWithLineWrap( 
+|           "Expected Hash Value = \'",
+|           MiddleString, 
+|           "\'\n", 
+|           72 ); 
+|
+| ...produces this output:
+|
+| Expected Hash Value = 'E62C05802EA0152407CDD8787FDA9E35703DE862A4FBC119C
+| FF8590 AFE79250BCCC8B3FAF1BD2422AB5C0D263FB2F8AFB3F796F048000381531B6F00
+| D85161BC0FFF4BEF2486B1EBCD3773FABF50AD4AD5639AF9040E3F29C6C931301BF79832
+| E9DA09857E831E82EF8B4691C235656515D437D2BDA33BCEC001C67FFDE15BA8'
+| 
+| HISTORY: 
+|    27Oct13 
+------------------------------------------------------------------------------*/
+void
+PrintStringWithLineWrap( 
+    s8* PrefixString,
+            // First part of the long string, itself a zero-terminated string.
+            //
+    s8* MiddleString, 
+            // Middle part of the long string, a zero-terminated string.
+            //
+    s8* SuffixString, 
+            // Last part of the long string, a zero-terminated string.
+            //
+    u32 LineLength )
+            // Maximum line length in characters.
+{
+    u32 PrefixStringSize;
+    u32 MiddleStringSize; 
+    u32 SuffixStringSize; 
+    u32 CharInLine;
+    u32 i;
+    
+    // Count the number of bytes in the prefix string without the zero at the
+    // end.
+    PrefixStringSize = strlen( PrefixString );
+    
+    // Measure the middle string.
+    MiddleStringSize = strlen( MiddleString );
+     
+    // Measure the end string.
+    SuffixStringSize = strlen( SuffixString );
+      
+    // Zero the characters-in-the-line counter.
+    CharInLine = 0;
+    
+    // Print characters from the prefix string, line wrapping as needed.
+    for( i = 0; i < PrefixStringSize; i++ )
+    {
+        // If the maximum line length has been reached, wrap to the next line.
+        if( CharInLine == LineLength )
+        {
+            // Insert a new line.
+            printf( "\n" );
+            
+            // Reset the character-in-line offset to zero. 
+            CharInLine = 0;
+        }
+        
+        // Print the current character.
+        printf( "%c", PrefixString[i] );
+        
+        // Account for having printed a character on the current line.
+        CharInLine++;
+    }
+    
+    // Print characters from the middle string, line wrapping as needed.
+    for( i = 0; i < MiddleStringSize; i++ )
+    {
+        // If the maximum line length has been reached, wrap to the next line.
+        if( CharInLine == LineLength )
+        {
+            // Insert a new line.
+            printf( "\n" );
+            
+            // Reset the character-in-line offset to zero. 
+            CharInLine = 0;
+        }
+        
+        // Print the current character.
+        printf( "%c", MiddleString[i] );
+        
+        // Account for having printed a character on the current line.
+        CharInLine++;
+    }
+    
+    // Print characters from the suffix string, line wrapping as needed.
+    for( i = 0; i < SuffixStringSize; i++ )
+    {
+        // If the maximum line length has been reached, wrap to the next line.
+        if( CharInLine == LineLength )
+        {
+            // Insert a new line.
+            printf( "\n" );
+            
+            // Reset the character-in-line offset to zero. 
+            CharInLine = 0;
+        }
+        
+        // Print the current character.
+        printf( "%c", SuffixString[i] );
+        
+        // Account for having printed a character on the current line.
+        CharInLine++;
     }
 }
 
@@ -13956,7 +14280,7 @@ ReportAvailableKeyBytes()
         //            
         // OUT: Offset of the first unused key byte in the file.
         StartingAddress = 
-            LookupOffsetOfFirstUnusedKeyByte( (s8*) &KeyHashStringBuffer[0] );
+            LookUpOffsetOfFirstUnusedKeyByte( (s8*) &KeyHashStringBuffer[0] );
                                                         // A hash string that 
                                                         // identifies the 
                                                         // one-time pad key 
@@ -14141,7 +14465,7 @@ SetFilePosition( FILE* FileHandle, u64 ByteOffset )
 | is known.
 |
 | HISTORY: 
-|    26Jan14 From LookupOffsetOfFirstUnusedKeyByte().
+|    26Jan14 From LookUpOffsetOfFirstUnusedKeyByte().
 ------------------------------------------------------------------------------*/
     // OUT: Result code of RESULT_OK if successful, or an error code.
 u32 //
@@ -14624,6 +14948,7 @@ Skein1024_Init( Skein1024Context* ctx, u32 hashBitLen )
 |
 | HISTORY:  
 |    03Mar14
+|    26Dec14 Added PrintStringWithLineWrap().
 ------------------------------------------------------------------------------*/
 void
 Skein1024_Print( Skein1024Context* ctx )
@@ -14637,11 +14962,18 @@ Skein1024_Print( Skein1024Context* ctx )
     printf( "T[] = '%s'\n",
             ConvertBytesToHexString( (u8*) &ctx->T[0], sizeof(ctx->T) ) );
 
-    printf( "X[] = '%s'\n",
-            ConvertBytesToHexString( (u8*) &ctx->X[0], SKEIN1024_BLOCK_BYTES ) );
+    PrintStringWithLineWrap( 
+        "X[] = '",
+        ConvertBytesToHexString( (u8*) &ctx->X[0], SKEIN1024_BLOCK_BYTES ), 
+        "'\n", 
+        80 );
 
-    printf( "b[] = '%s'\n", 
-            ConvertBytesToHexString( (u8*) &ctx->b[0], sizeof(ctx->b) ) );
+    PrintStringWithLineWrap( 
+        "b[] = '",
+        ConvertBytesToHexString( (u8*) &ctx->b[0], sizeof(ctx->b) ), 
+        "'\n", 
+        80 );
+
 }
 
 /*------------------------------------------------------------------------------
@@ -14898,6 +15230,8 @@ Skein1024_Test()
 |
 | HISTORY: 
 |    30Nov14 From ComputeKeyIDHash128bit().
+|    26Dec14 Added printing of the computed and expected hash values along with
+|            the message data.
 ------------------------------------------------------------------------------*/
     // OUT: Result code equal to RESULT_OK (0) if no error, otherwise an error 
     //      code.  
@@ -14911,6 +15245,18 @@ Skein1024_TestCase( u8* MessageData, u32 MessageSize, u8* ExpectedResult )
     static Skein1024Context HashContext;
                 // Static buffers are used in this routine to avoid taking up 
                 // too much stack space.
+
+    // Print status message if verbose output is enabled.
+    if( IsVerbose.Value )
+    {
+        printf( "Begin hash function test case.\n\n" );
+                
+        PrintStringWithLineWrap( 
+            "Message Data = '",
+            ConvertBytesToHexString( MessageData, MessageSize ), 
+            "'\n\n", 
+            80 );
+    }
    
     // Initialize the hash context for producing a 1024-bit hash.
     Skein1024_Init( &HashContext, 1024 );
@@ -14941,6 +15287,24 @@ Skein1024_TestCase( u8* MessageData, u32 MessageSize, u8* ExpectedResult )
     // Compute the final 1024-bit hash value, putting it into Hash1024Buffer.
     Skein1024_Final( &HashContext, Hash1024Buffer );
     
+    // Print status message if verbose output is enabled.
+    if( IsVerbose.Value )
+    {
+        // Print the hash value from the standard document.
+        PrintStringWithLineWrap( 
+            "Expected Hash Value = '",
+            ConvertBytesToHexString( ExpectedResult, 128 ), 
+            "'\n\n", 
+            80 );
+                
+        // Print the hash value computed from the message data.
+        PrintStringWithLineWrap( 
+            "Computed Hash Value = '",
+            ConvertBytesToHexString( (u8*) &Hash1024Buffer, 128 ), 
+            "'\n\n", 
+            80 );
+    }
+    
     // If the computed hash matches the expected hash value, then return
     // RESULT_OK (0).
     if( IsMatchingBytes( (u8*) &Hash1024Buffer, ExpectedResult, 128 ) )
@@ -14948,10 +15312,15 @@ Skein1024_TestCase( u8* MessageData, u32 MessageSize, u8* ExpectedResult )
         // Print status message if verbose output is enabled.
         if( IsVerbose.Value )
         {
-            printf( "PASS: Hash function test case produced expected results.\n" );
+            printf( "PASS: Hash function test case produced expected results.\n\n" );
             printf( "Final values in hash context:\n" );
             Skein1024_Print( &HashContext );
             printf( "\n" );
+            
+            // Print a dividing line between hash test cases in verbose mode to make 
+            // reading log files easier.
+            printf( "--------------------------------------------------------------"
+                    "------------------\n" );
         }
 
         return( RESULT_OK );
@@ -15191,7 +15560,7 @@ StripCommentsInStringList( List* L ) // A list of strings.
         if( C.TheItem->DataAddress )
         {
             // Get the string count.
-            CharCount = CountString( (s8*) C.TheItem->DataAddress );
+            CharCount = strlen( (s8*) C.TheItem->DataAddress );
 
             // If there are at least two characters in the string, then look
             // for a comment marker '//'.
@@ -15264,7 +15633,7 @@ StripLeadingWhiteSpaceInStringList( List* L ) // L is a list of strings.
                     
             // Count the number of characters in the string, not including the
             // zero at the end.
-            CharCount = CountString( Here );
+            CharCount = strlen( Here );
             
             // Scan to the first non-white character in the string.
             SkipWhiteSpace( 
@@ -15358,7 +15727,7 @@ StripTrailingWhiteSpaceInStringList( List* L ) // A list of strings.
         {
             // Count the number of characters in the string, not including the
             // zero at the end.
-            CharCount = CountString( (s8*) C.TheItem->DataAddress );
+            CharCount = strlen( (s8*) C.TheItem->DataAddress );
 
             // If there are characters in the string, then look for trailing
             // whitespace.
