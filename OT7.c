@@ -4,7 +4,7 @@
              -- LIGHTLY TESTED ON DEBIAN, MAC OSX, AND WINDOWS --
    
 --------------------------------------------------------------------------------
-OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                       December 27, 2014
+OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                       December 30, 2014
 --------------------------------------------------------------------------------
 
 PURPOSE: A tool and protocol for one-time pad encryption.
@@ -567,8 +567,8 @@ and password are included.
 #if defined( __MWERKS__ ) || defined( __APPLE_CC__ )
     #define off64_t     off_t
     #define fopen64     fopen 
-    #define fseeko64    fseek
-    #define ftello64    ftell
+    #define fseeko64    fseeko
+    #define ftello64    ftello
 #endif // __MWERKS__ || __APPLE_CC__
 
 //------------------------------------------------------------------------------
