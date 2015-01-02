@@ -1,10 +1,7 @@
 /* https://github.com/otseven/OT7            
 
-          -- THIS IS BETA CODE SUITABLE FOR EXPERIMENTAL USE ONLY --
-             -- LIGHTLY TESTED ON DEBIAN, MAC OSX, AND WINDOWS --
-   
 --------------------------------------------------------------------------------
-OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                       December 30, 2014
+OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                         January 2, 2015
 --------------------------------------------------------------------------------
 
 PURPOSE: A tool and protocol for one-time pad encryption.
@@ -1512,7 +1509,7 @@ ResultCodesOT7[] =
      
 //------------------------------------------------------------------------------
  
-#define OT7_VERSION_STRING "OT7 -- One-Time Pad Encryption Tool v7"
+#define OT7_VERSION_STRING "OT7 -- One-Time Pad Encryption Tool v8"
             // Version identifier for this application.
 
 // This usage info is printed to standard output for the '-h' command. 
