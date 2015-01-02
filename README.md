@@ -22,13 +22,13 @@ Requires:
         
         - C compiler and a command line environment.
         - User-generated random key files.
+        
+To build OT7: gcc OT7.c -o ot7
 
-December 27, 2014 status - Just fixed a string length calculation bug, so please 
-upgrade to the latest version. Everything else seems to work and the hash function 
-has been validated relative to the reference design. OT7 has been lightly tested 
-on Debian, Mac OSX, and Windows. There are no known bugs but more testing is needed
-to finalize the code. Next up is to do more testing with a bunch of randomly 
-generated test files. 
+To build ot7test: gcc ot7test.c -o ot7test
+
+January 2, 2015 status - OT7 is released for general use. It has passed the 
+ot7test program on Debian (64-bit) and Mac OSX (PowerPC). 
  
 LICENSE: This is public domain software. I am grateful to Edward Snowden for
 revealing why encryption is necessary. Please consider donating to his defense 
