@@ -1,15 +1,15 @@
 /* https://github.com/otseven/OT7            
 
 --------------------------------------------------------------------------------
-OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                         January 2, 2015
+OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                         January 7, 2015
 --------------------------------------------------------------------------------
 
 PURPOSE: A tool and protocol for one-time pad encryption.
 
 DESCRIPTION: OT7 is an implementation of the one-time pad encryption method. 
 
-Encryption is needed to protect intellectual property held on data storage 
-devices and when traveling on the internet.
+Encryption is needed to protect property held on data storage devices and when 
+traveling on the internet.
 
 OT7 produces an encrypted file that remains secret when sent over unsecure 
 channels.  
@@ -561,12 +561,21 @@ and password are included.
 
 // For MacOS X, 64-bit file access is standard. Define the symbols needed to
 // link to the library routines.
-#if defined( __MWERKS__ ) || defined( __APPLE_CC__ )
+#if (defined( __MWERKS__ ) && !defined( _MSC_VER )) || defined( __APPLE_CC__ )
     #define off64_t     off_t
     #define fopen64     fopen 
     #define fseeko64    fseeko
     #define ftello64    ftello
 #endif // __MWERKS__ || __APPLE_CC__
+
+// For Windows with Microsoft Visual C++, use these 64-bit file i/o routines.
+#if defined( _MSC_VER ) && !defined( __MWERKS__ )
+	
+    #define fopen64  fopen
+    #define ftello64 _ftelli64
+    #define fseeko64 _fseeki64
+ 
+#endif // _MSC_VER
 
 //------------------------------------------------------------------------------
 
