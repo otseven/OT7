@@ -1,7 +1,7 @@
 /* https://github.com/otseven/OT7            
 
 --------------------------------------------------------------------------------
-OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                         January 7, 2015
+OT7.c - OT7 ONE-TIME PAD ENCRYPTION TOOL                        January 17, 2015
 --------------------------------------------------------------------------------
 
 PURPOSE: A tool and protocol for one-time pad encryption.
@@ -361,7 +361,7 @@ Here is an example 'key.map' file that you can use as a template for your own:
 //
 //    KeyID( 143 )
 //    {
-//          ...the parameters of the key...
+//          ...the parameters of the key definition...
 //    }
 //
 // where:
@@ -375,11 +375,11 @@ Here is an example 'key.map' file that you can use as a template for your own:
 //    can be stored in a 64-bit field, 18446744073709551616 or 
 //    0xFFFFFFFFFFFFFFFF.
 //
-//    The KeyID is connected with the KeyIDHash the stored in the header of an 
+//    The KeyID is connected with the KeyIDHash stored in the header of an 
 //    OT7 record in encrypted form. 
 //
 //    When an OT7 record is decrypted, the KeyIDHash in the OT7 record header  
-//    implies which key definition to used for decryption. This look up 
+//    implies which key definition to use for decryption. This look up 
 //    procedure can be overridden by specifying that a certain KeyID be used 
 //    instead with the '-KeyID <number>' command line option.
 //
@@ -442,9 +442,9 @@ KeyID( 143 )
     // any password that might also be stored in a key definition. In this 
     // example, a password is stored in the key definition. 
       
-    -p "This is the password for encrypting files sent to Dan Jones."
+    -p "The password for encrypting files sent to Dan Jones."
      
-    // Passwords are either single words or phrases enclosed in double quotes
+    // Passwords are either single words or phrases enclosed in double quotes.
     // Passwords may be up to 2000 characters long. Longer passwords are more 
     // secure than shorter ones. 
     //
@@ -521,7 +521,7 @@ different ways:
       
     ot7 -e email.txt -ID BM-GtkZoid3xpT4nwxezDfpWtYAfY6vgyHd
 
-    ot7 -e email.txt -ID "Dan Jones" -p "a special password for today"
+    ot7 -e email.txt -ID "Dan Jones" -p "a password for today"
 
 All of the above commands will encrypt the file 'email.txt' to produce an 
 encrypted file named 'Dan.txt'.  
@@ -531,7 +531,7 @@ If Dan Jones has a key definition for KeyID( 143 ), then he can decrypt
 
     ot7 -d Dan.txt
 
-    ot7 -d Dan.txt -p "a special password for today" 
+    ot7 -d Dan.txt -p "a password for today" 
 
 ... resulting in the file 'email.txt' being produced in his current 
 directory. 
@@ -560,13 +560,38 @@ and password are included.
 #include <string.h>
 
 // For MacOS X, 64-bit file access is standard. Define the symbols needed to
-// link to the library routines.
-#if (defined( __MWERKS__ ) && !defined( _MSC_VER )) || defined( __APPLE_CC__ )
+// link to the library routines with the GCC compiler.
+#if defined( __APPLE_CC__ ) && !defined( __MWERKS__ )
+
     #define off64_t     off_t
     #define fopen64     fopen 
     #define fseeko64    fseeko
     #define ftello64    ftello
-#endif // __MWERKS__ || __APPLE_CC__
+    
+#endif // __APPLE_CC__ && !__MWERKS__
+
+// The Metrowerks 8 compiler only supports 32-bit file offsets for 
+// Windows and MacOS X. 
+//
+// Define the symbols needed to build OT7 for files up to 4GB in size.
+#if defined( __MWERKS__ ) 
+
+    #define off64_t     off_t
+    #define fopen64     fopen 
+    #define fseeko64    fseek
+    #define ftello64    ftell
+
+    #undef _LARGEFILE64_SOURCE
+            // Disable the use of large files with sizes up to 2^64.
+            
+    #undef _FILE_OFFSET_BITS
+    #define _FILE_OFFSET_BITS 32
+            // Enable the use of 32-bit file offsets.
+            
+    #undef _LARGEFILE_SOURCE
+            // Disable the use of fseeko and ftello.
+    
+#endif // __MWERKS__ 
 
 // For Windows with Microsoft Visual C++, use these 64-bit file i/o routines.
 #if defined( _MSC_VER ) && !defined( __MWERKS__ )
@@ -575,8 +600,8 @@ and password are included.
     #define ftello64 _ftelli64
     #define fseeko64 _fseeki64
  
-#endif // _MSC_VER
-
+#endif // _MSC_VER && !__MWERKS__
+ 
 //------------------------------------------------------------------------------
 
 // Abbreviated integer types.
@@ -643,16 +668,16 @@ typedef long             s32;
 //------------------------------------------------------------------------------
 
 // This is the default password used if none is specified with the '-p' command.
-// Customize this password for improved security. If the DefaultPassword is 
-// changed, then a corresponding change may also need to be made to other 
-// instances of the ot7 command line tool so that decryption will work when no 
-// password is specified with the '-p' option.
+// Customize this password for improved security. When changing this password, 
+// remember to be consistent with other copies of the ot7 command line tool so 
+// that they will work the same way when no password is specified with the '-p'
+// option.
 s8* DefaultPassword = "The right of the people to be secure in their persons, "
         "houses, papers, and effects, against unreasonable searches and "
         "seizures, shall not be violated, and no warrants shall issue, but "
         "upon probable cause, supported by oath or affirmation, and "
         "particularly describing the place to be searched, and the persons or "
-        "things to be seized. ";
+        "things to be seized.";
   
 //------------------------------------------------------------------------------
 
@@ -1518,7 +1543,7 @@ ResultCodesOT7[] =
      
 //------------------------------------------------------------------------------
  
-#define OT7_VERSION_STRING "OT7 -- One-Time Pad Encryption Tool v8"
+#define OT7_VERSION_STRING "OT7 -- One-Time Pad Encryption Tool v9"
             // Version identifier for this application.
 
 // This usage info is printed to standard output for the '-h' command. 
@@ -1801,9 +1826,9 @@ Help[] =
 "    // any password that might also be stored in a key definition. In this", 
 "    // example, a password is stored in the key definition.",
 "",
-"    -p \"This is the password for encrypting files sent to Dan Jones.\"",
+"    -p \"The password for encrypting files sent to Dan Jones.\"",
 "",
-"    // Passwords are either single words or phrases enclosed in double quotes",
+"    // Passwords are either single words or phrases enclosed in double quotes.",
 "    // Passwords may be up to 2000 characters long. Longer passwords are more", 
 "    // secure than shorter ones.",
 "    //",
@@ -2952,7 +2977,7 @@ Exit://
     }
  
     // Return result code to the calling application.
-    exit( Result );
+    return( Result );
 }
 
 /*------------------------------------------------------------------------------
