@@ -4,8 +4,8 @@ OT7 - ONE-TIME PAD ENCRYPTION TOOL
 DESCRIPTION: OT7 is an implementation of the one-time pad encryption method. 
 It's a portable command line tool that works on many operating systems. 
 
-Encryption is needed to protect intellectual property held on data storage 
-devices and when traveling on the internet.
+Encryption is needed to protect property held on data storage devices and when 
+traveling on the internet.
 
 OT7 produces an encrypted file that remains secret when sent over unsecure 
 channels.  
@@ -33,12 +33,13 @@ for linking file i/o routines.
 Here's an encryption example:
 
     1. Make a file named hello.txt containing "Hello world!".
-    2. Generate a key file named 123.key.
+    2. Generate a key file named 123.key. For this test, any file can be used as
+       a key file by renaming it to "123.key".
     3. Encrypt the file using this command: 
 
           ./ot7 -e hello.txt -KeyID 123 -oe hello.b64
 
-The encrypted message is contained in hello.b64, and looks like this:
+The encrypted message is contained in hello.b64, and looks something like this:
 
           Av1mMo7FOEgeSc20wbVcbju7k3/0UMkp8SlR9HbwTW+mSKOGJI8CpQP7TgO8ZaLmt965HoBuYaAW
           4SVzGlQNC8afIZ8tRuUPxw==
