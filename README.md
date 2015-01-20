@@ -33,7 +33,7 @@ for linking file i/o routines.
 Here's an encryption example:
 
     1. Make a file named hello.txt containing "Hello world!".
-    2. Generate a key file named 123.key. For this test, any file can be used as
+    2. Generate a key file named 123.key. For this example, any file can be used as
        a key file by renaming it to "123.key".
     3. Encrypt the file using this command: 
 
