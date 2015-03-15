@@ -13,9 +13,12 @@ channels.
 Features:
 
         - Convenient key management using a configuration file.
-        - Password protection.
-        - Optional key erasure for forward security.
+        - Password protection in case the key file is ever stolen.
+        - Optional erasure of message keys after use for forward security.
+        - Encrypted code format is unstructured to defeat protocol analysis.
         - Completely documented source code to make validation easier.
+        - Informative return codes to support the use of OT7 in scripts.
+        - Built in help function.
 
 Requires:
         
@@ -30,7 +33,7 @@ for linking file i/o routines.
         To build ot7test:   gcc ot7test.c -o ot7test
 
 
-Here's an encryption example:
+Here's a simple encryption example:
 
     1. Make a file named hello.txt containing "Hello world!".
     2. Generate a key file named 123.key. For this example, any file can be used as
@@ -50,6 +53,15 @@ To decrypt the message, use this command:
      
 The resulting file hello2.txt contains the original message "Hello world!".
 
+More options are available to make using OT7 easier. 
+
+To list the OT7 user guide, use the help command:
+
+          ./ot7 -h
+          
+Or to save the user guide to a file, type:
+
+          ./ot7 -h > help.txt
 
 LICENSE: This is public domain software. I am grateful to Edward Snowden for
 revealing why encryption is necessary. Please consider donating to his defense 
