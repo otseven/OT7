@@ -12,10 +12,13 @@ channels.
 
 Features:
 
-        - Convenient key management using a configuration file.
-        - Password protection in case the key file is ever stolen.
+        - Flexible key management using a configuration file.
+        - Password protection in case a key file is ever stolen.
         - Optional erasure of message keys after use for forward security.
-        - Encrypted code format is unstructured to defeat protocol analysis.
+        - Base64 or binary encrypted code format.
+        - Encrypted code format is designed to defeat protocol analysis.
+        - Optional padding bytes to hide the size of the message.
+        - All working memory buffers are cleared after use.
         - Completely documented source code to make validation easier.
         - Informative return codes to support the use of OT7 in scripts.
         - Built in help function.
