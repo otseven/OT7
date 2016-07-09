@@ -11085,7 +11085,7 @@ ParseCommandLine(
     static u8 IsAppNamePrinted = 0;
     s8* S;
     u32 result;
-    static ParameterValueString[MAX_PARAMETER_VALUE_SIZE];
+    static u32 ParameterValueString[MAX_PARAMETER_VALUE_SIZE];
     
     // Set the default result code to be no error.
     result = RESULT_OK;
